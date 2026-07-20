@@ -122,3 +122,21 @@ export async function syncBooks(): Promise<void> {
     throw new Error(error.message || 'Erro ao descarregar dados do Google Sheets.');
   }
 }
+
+export async function searchBNP(query: string): Promise<string> {
+  try {
+    const url = `/api/bnp?query=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Erro ao pesquisar na BNP (${response.status})`);
+    }
+
+    const xml = await response.text();
+    return xml;
+  } catch (error: any) {
+    console.error('Error searching BNP via proxy', error);
+    throw error;
+  }
+}
+
