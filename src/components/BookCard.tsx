@@ -27,8 +27,12 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
       exit={{ opacity: 0, scale: 0.95 }}
       className="group bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4 hover:border-sky-500/50 hover:bg-slate-800/50 transition-all cursor-pointer relative"
     >
-      <div className="w-12 h-16 bg-slate-800 rounded flex-shrink-0 flex items-center justify-center border border-slate-700">
-         <BookOpen className="w-6 h-6 text-slate-600" />
+      <div className="w-12 h-16 bg-slate-800 rounded flex-shrink-0 flex items-center justify-center border border-slate-700 overflow-hidden">
+        {book.coverImage ? (
+          <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+        ) : (
+          <BookOpen className="w-6 h-6 text-slate-600" />
+        )}
       </div>
       
       <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 items-center gap-4 pr-12 sm:pr-8">

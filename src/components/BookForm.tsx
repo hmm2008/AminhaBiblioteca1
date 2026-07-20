@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LocalBook, ReadStatus } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { X, ScanBarcode, BookOpen } from 'lucide-react';
+import { X, ScanBarcode, BookOpen, Camera, Search, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface BookFormProps {
@@ -11,6 +11,7 @@ interface BookFormProps {
 }
 
 export function BookForm({ book, onSave, onClose }: BookFormProps) {
+  const [isSearching, setIsSearching] = useState(false);
   const [formData, setFormData] = useState<Partial<LocalBook>>({
     title: '',
     author: '',
@@ -19,13 +20,96 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     readStatus: 'Não Lido',
     rating: 0,
     notes: '',
+    coverImage: '',
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 300;
+        const MAX_HEIGHT = 450;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setFormData({ ...formData, coverImage: dataUrl });
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (book) {
       setFormData(book);
     }
   }, [book]);
+
+  const handleSearchOnline = async () => {
+    setIsSearching(true);
+    try {
+      let query = '';
+      if (formData.isbn) {
+        query = `isbn=${formData.isbn}`;
+      } else if (formData.title && formData.author) {
+        query = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
+      } else if (formData.title) {
+        query = `title=${encodeURIComponent(formData.title)}`;
+      } else if (formData.author) {
+        query = `author=${encodeURIComponent(formData.author)}`;
+      }
+
+      if (!query) return;
+
+      const res = await fetch(`https://openlibrary.org/search.json?${query}`);
+      const data = await res.json();
+      
+      if (data.docs && data.docs.length > 0) {
+        const bookData = data.docs[0];
+        const newFormData = { ...formData };
+        
+        if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
+        if (!newFormData.author && bookData.author_name) newFormData.author = bookData.author_name[0];
+        if (!newFormData.isbn && bookData.isbn) newFormData.isbn = bookData.isbn[0];
+        
+        if (bookData.cover_i) {
+          // Instead of downloading and converting to base64 which might fail due to CORS,
+          // We can just store the URL. But previously we used base64. 
+          // Open Library allows image hotlinking for covers! Let's store the URL.
+          newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
+        }
+        
+        setFormData(newFormData);
+      }
+    } catch (error) {
+      console.error("Erro na pesquisa:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +125,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       rating: formData.rating || 0,
       notes: formData.notes || '',
       dateAdded: formData.dateAdded || new Date().toISOString(),
+      coverImage: formData.coverImage || '',
       syncStatus: 'pending',
     };
 
@@ -122,6 +207,15 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   <ScanBarcode className="w-4 h-4" />
                 </button>
               </div>
+              <button 
+                type="button" 
+                onClick={handleSearchOnline}
+                disabled={isSearching}
+                className="w-full mt-2 py-2 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sky-400 font-medium text-xs rounded-lg transition-colors border border-slate-700"
+              >
+                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                {isSearching ? 'A pesquisar...' : 'Pesquisar Online (por Título, Autor ou ISBN)'}
+              </button>
             </div>
 
             <div className="space-y-1.5">
@@ -156,6 +250,37 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                     ★
                   </span>
                 ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Capa do Livro</label>
+              <div className="flex mb-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                />
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative w-24 h-32 rounded-xl border-2 border-dashed border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center cursor-pointer hover:border-sky-500 hover:bg-slate-800 transition-all overflow-hidden group"
+                >
+                  {formData.coverImage ? (
+                    <>
+                      <img src={formData.coverImage} alt="Capa" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center text-slate-500 group-hover:text-sky-400 transition-colors">
+                      <Camera className="w-6 h-6 mb-1" />
+                      <span className="text-[8px] uppercase font-bold tracking-wider text-center px-2">Adicionar Capa</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

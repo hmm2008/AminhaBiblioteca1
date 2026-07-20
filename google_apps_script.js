@@ -94,10 +94,17 @@ function getOrCreateBooksSheet(ss) {
   const data = sheet.getDataRange().getValues();
   if (data.length === 1 && data[0].join("").trim() === "") {
     sheet.clear();
-    sheet.appendRow(["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded"]);
-    sheet.getRange("A1:I1").setFontWeight("bold");
+    sheet.appendRow(["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded", "coverImage"]);
+    sheet.getRange("A1:J1").setFontWeight("bold");
     sheet.setFrozenRows(1);
     logDebug("Cabeçalhos criados com sucesso na folha 'Books'.", "");
+  } else if (data.length > 0) {
+    // Add missing coverImage header to existing sheets
+    const headers = data[0];
+    if (headers.indexOf("coverImage") === -1) {
+      sheet.getRange(1, Math.max(9, headers.length) + 1).setValue("coverImage");
+      sheet.getRange("A1:J1").setFontWeight("bold");
+    }
   }
   
   return sheet;
@@ -180,7 +187,7 @@ function handleRequest(e, method) {
       let headers = existingData[0] || [];
       
       if (!headers || headers.join("").trim() === "") {
-        headers = ["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded"];
+        headers = ["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded", "coverImage"];
       }
 
       let eliminados = 0;
@@ -231,7 +238,8 @@ function handleRequest(e, method) {
             book.readStatus || "",
             book.rating || 0,
             book.notes || "",
-            book.dateAdded || new Date().toISOString()
+            book.dateAdded || new Date().toISOString(),
+            book.coverImage || ""
           ];
 
           if (idMap[book.id]) {
