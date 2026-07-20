@@ -62,19 +62,37 @@ function getOrCreateBooksSheet(ss) {
     }
   }
   
+  const expectedHeaders = ["id", "title", "author", "isbn", "category", "readStatus", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description"];
+
   // Garantir cabeçalhos se a folha estiver vazia
   const data = sheet.getDataRange().getValues();
   if (data.length === 1 && data[0].join("").trim() === "") {
     sheet.clear();
-    sheet.appendRow(["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded", "coverImage"]);
-    sheet.getRange("A1:J1").setFontWeight("bold");
+    sheet.appendRow(expectedHeaders);
+    sheet.getRange(1, 1, 1, expectedHeaders.length).setFontWeight("bold");
     sheet.setFrozenRows(1);
   } else if (data.length > 0) {
-    // Add missing coverImage header to existing sheets
+    // Add missing headers to existing sheets
     const headers = data[0];
-    if (headers.indexOf("coverImage") === -1) {
-      sheet.getRange(1, Math.max(9, headers.length) + 1).setValue("coverImage");
-      sheet.getRange("A1:J1").setFontWeight("bold");
+    let headersUpdated = false;
+    
+    // Rename 'genre' to 'category' if it exists
+    const genreIndex = headers.indexOf("genre");
+    if (genreIndex !== -1) {
+      headers[genreIndex] = "category";
+      sheet.getRange(1, genreIndex + 1).setValue("category");
+    }
+
+    expectedHeaders.forEach(header => {
+      if (headers.indexOf(header) === -1) {
+        headers.push(header);
+        sheet.getRange(1, headers.length).setValue(header);
+        headersUpdated = true;
+      }
+    });
+
+    if (headersUpdated || genreIndex !== -1) {
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
     }
   }
   
@@ -152,7 +170,7 @@ function handleRequest(e, method) {
       let headers = existingData[0] || [];
       
       if (!headers || headers.join("").trim() === "") {
-        headers = ["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded", "coverImage"];
+        headers = ["id", "title", "author", "isbn", "category", "readStatus", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description"];
       }
 
       let eliminados = 0;
@@ -181,6 +199,11 @@ function handleRequest(e, method) {
 
       // Buscar os dados atualizados após eventuais eliminações
       const dataAfterDeletions = sheet.getDataRange().getValues();
+      // Ensure we have headers even if sheet was empty before
+      if (dataAfterDeletions.length > 0) {
+        headers = dataAfterDeletions[0];
+      }
+
       const idMap = {};
       for (let i = 1; i < dataAfterDeletions.length; i++) {
         const rowId = dataAfterDeletions[i][0];
@@ -194,18 +217,13 @@ function handleRequest(e, method) {
 
       if (Array.isArray(data.books)) {
         data.books.forEach(book => {
-          const rowData = [
-            book.id || "",
-            book.title || "",
-            book.author || "",
-            book.isbn || "",
-            book.genre || "",
-            book.readStatus || "",
-            book.rating || 0,
-            book.notes || "",
-            book.dateAdded || new Date().toISOString(),
-            book.coverImage || ""
-          ];
+          const rowData = headers.map(header => {
+            if (header === 'dateAdded' && !book[header]) return new Date().toISOString();
+            if (header === 'rating' && book[header] === undefined) return 0;
+            // Handle legacy genre
+            if (header === 'category' && book['genre'] && !book['category']) return book['genre'];
+            return book[header] !== undefined ? book[header] : "";
+          });
 
           if (idMap[book.id]) {
             sheet.getRange(idMap[book.id], 1, 1, rowData.length).setValues([rowData]);

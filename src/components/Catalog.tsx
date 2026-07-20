@@ -10,14 +10,14 @@ export function Catalog() {
   const { books, addOrUpdateBook, removeBook } = useBooks();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ReadStatus | 'Todos'>('Todos');
-  const [genreFilter, setGenreFilter] = useState<string>('Todos');
+  const [categoryFilter, setCategoryFilter] = useState<string>('Todos');
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<LocalBook | null>(null);
 
-  const allGenres = useMemo(() => {
-    const genres = new Set(books.map(b => b.genre).filter(Boolean));
-    return ['Todos', ...Array.from(genres)];
+  const allCategories = useMemo(() => {
+    const categories = new Set(books.map(b => b.category).filter(Boolean));
+    return ['Todos', ...Array.from(categories)];
   }, [books]);
 
   const filteredBooks = useMemo(() => {
@@ -27,11 +27,11 @@ export function Catalog() {
         book.author.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'Todos' || book.readStatus === statusFilter;
-      const matchesGenre = genreFilter === 'Todos' || book.genre === genreFilter;
+      const matchesCategory = categoryFilter === 'Todos' || book.category === categoryFilter;
 
-      return matchesSearch && matchesStatus && matchesGenre;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [books, searchTerm, statusFilter, genreFilter]);
+  }, [books, searchTerm, statusFilter, categoryFilter]);
 
   const handleSave = async (book: LocalBook) => {
     await addOrUpdateBook(book);
@@ -84,18 +84,18 @@ export function Catalog() {
           </select>
           
           <select 
-            value={genreFilter}
-            onChange={(e) => setGenreFilter(e.target.value)}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
             className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-sky-500 transition-all appearance-none flex-grow md:flex-grow-0 max-w-[150px] truncate"
           >
-            {allGenres.map(g => (
-              <option key={g} value={g}>{g === 'Todos' ? 'Todos os géneros' : g}</option>
+            {allCategories.map(c => (
+              <option key={c} value={c}>{c === 'Todos' ? 'Todas as categorias' : c}</option>
             ))}
           </select>
 
-          {(searchTerm || statusFilter !== 'Todos' || genreFilter !== 'Todos') && (
+          {(searchTerm || statusFilter !== 'Todos' || categoryFilter !== 'Todos') && (
             <button 
-              onClick={() => { setSearchTerm(''); setStatusFilter('Todos'); setGenreFilter('Todos'); }}
+              onClick={() => { setSearchTerm(''); setStatusFilter('Todos'); setCategoryFilter('Todos'); }}
               className="p-2 bg-slate-950 border border-slate-800 text-slate-400 hover:text-red-400 hover:border-red-400/50 rounded-lg transition-colors"
               title="Limpar filtros"
             >

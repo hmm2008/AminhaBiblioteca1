@@ -16,7 +16,12 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     title: '',
     author: '',
     isbn: '',
-    genre: '',
+    category: '',
+    publisher: '',
+    publishedDate: '',
+    pageCount: '',
+    language: '',
+    description: '',
     readStatus: 'Não Lido',
     rating: 0,
     notes: '',
@@ -179,10 +184,16 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             else if (isbn10) newFormData.isbn = isbn10.identifier;
           }
 
-          if (!newFormData.genre && bookData.categories && bookData.categories.length > 0) {
-            newFormData.genre = bookData.categories[0];
+          if (!newFormData.category && bookData.categories && bookData.categories.length > 0) {
+            newFormData.category = bookData.categories[0];
           }
           
+          if (!newFormData.publisher && bookData.publisher) newFormData.publisher = bookData.publisher;
+          if (!newFormData.publishedDate && bookData.publishedDate) newFormData.publishedDate = bookData.publishedDate;
+          if (!newFormData.pageCount && bookData.pageCount) newFormData.pageCount = bookData.pageCount;
+          if (!newFormData.language && bookData.language) newFormData.language = bookData.language;
+          if (!newFormData.description && bookData.description) newFormData.description = bookData.description;
+
           if (!newFormData.coverImage && bookData.imageLinks?.thumbnail) {
             let coverUrl = bookData.imageLinks.thumbnail.replace('http:', 'https:');
             coverUrl = coverUrl.replace('&edge=curl', '');
@@ -194,6 +205,11 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           if (!newFormData.author && bookData.author_name && bookData.author_name.length > 0) newFormData.author = bookData.author_name[0];
           if (!newFormData.isbn && bookData.isbn && bookData.isbn.length > 0) newFormData.isbn = bookData.isbn[0];
           
+          if (!newFormData.publisher && bookData.publisher && bookData.publisher.length > 0) newFormData.publisher = bookData.publisher[0];
+          if (!newFormData.publishedDate && bookData.first_publish_year) newFormData.publishedDate = String(bookData.first_publish_year);
+          if (!newFormData.pageCount && bookData.number_of_pages_median) newFormData.pageCount = bookData.number_of_pages_median;
+          if (!newFormData.language && bookData.language && bookData.language.length > 0) newFormData.language = bookData.language[0];
+
           if (!newFormData.coverImage && bookData.cover_i) {
             newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
           }
@@ -220,12 +236,17 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       title: formData.title || '',
       author: formData.author || '',
       isbn: formData.isbn || '',
-      genre: formData.genre || '',
+      category: formData.category || '',
       readStatus: formData.readStatus as ReadStatus || 'Não Lido',
       rating: formData.rating || 0,
       notes: formData.notes || '',
       dateAdded: formData.dateAdded || new Date().toISOString(),
       coverImage: formData.coverImage || '',
+      publisher: formData.publisher || '',
+      publishedDate: formData.publishedDate || '',
+      pageCount: formData.pageCount || '',
+      language: formData.language || '',
+      description: formData.description || '',
       syncStatus: 'pending',
     };
 
@@ -258,15 +279,26 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             
             <div className="space-y-1.5">
               <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Título do Livro *</label>
-              <input 
-                required
-                autoFocus
-                type="text" 
-                value={formData.title}
-                onChange={e => setFormData({...formData, title: e.target.value})}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                placeholder="Ex: O Alquimista"
-              />
+              <div className="relative">
+                <input 
+                  required
+                  autoFocus
+                  type="text" 
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg pl-3 pr-10 py-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
+                  placeholder="Ex: O Alquimista"
+                />
+                <button 
+                  type="button" 
+                  onClick={handleSearchOnline}
+                  disabled={isSearching}
+                  className="absolute right-3 top-2.5 text-sky-400 hover:text-white transition-colors disabled:opacity-50"
+                  title="Pesquisar Online por este Título"
+                >
+                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -274,7 +306,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Autor</label>
                 <input 
                   type="text" 
-                  value={formData.author}
+                  value={formData.author || ''}
                   onChange={e => setFormData({...formData, author: e.target.value})}
                   className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
                   placeholder="Nome"
@@ -282,11 +314,11 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Género</label>
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Categoria</label>
                 <input 
                   type="text" 
-                  value={formData.genre}
-                  onChange={e => setFormData({...formData, genre: e.target.value})}
+                  value={formData.category || ''}
+                  onChange={e => setFormData({...formData, category: e.target.value})}
                   className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
                   placeholder="Ex: Ficção"
                 />
@@ -294,11 +326,11 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">ISBN / Código de Barras</label>
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">ISBN / EAN</label>
               <div className="relative">
                 <input 
                   type="text" 
-                  value={formData.isbn}
+                  value={formData.isbn || ''}
                   onChange={e => setFormData({...formData, isbn: e.target.value})}
                   className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg pl-3 pr-10 py-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
                   placeholder="978-0-..."
@@ -307,15 +339,52 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   <ScanBarcode className="w-4 h-4" />
                 </button>
               </div>
-              <button 
-                type="button" 
-                onClick={handleSearchOnline}
-                disabled={isSearching}
-                className="w-full mt-2 py-2 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-sky-400 font-medium text-xs rounded-lg transition-colors border border-slate-700"
-              >
-                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                {isSearching ? 'A pesquisar...' : 'Pesquisar Online (por Título, Autor ou ISBN)'}
-              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Editora</label>
+                <input 
+                  type="text" 
+                  value={formData.publisher || ''}
+                  onChange={e => setFormData({...formData, publisher: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
+                  placeholder="Ex: Porto Editora"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Data de Lançamento</label>
+                <input 
+                  type="text" 
+                  value={formData.publishedDate || ''}
+                  onChange={e => setFormData({...formData, publishedDate: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
+                  placeholder="AAAA-MM-DD ou AAAA"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Nº de Páginas</label>
+                <input 
+                  type="number" 
+                  value={formData.pageCount || ''}
+                  onChange={e => setFormData({...formData, pageCount: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
+                  placeholder="Ex: 350"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Idioma</label>
+                <input 
+                  type="text" 
+                  value={formData.language || ''}
+                  onChange={e => setFormData({...formData, language: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
+                  placeholder="Ex: pt"
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -382,6 +451,16 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Sinopse / Conteúdo</label>
+              <textarea 
+                value={formData.description || ''}
+                onChange={e => setFormData({...formData, description: e.target.value})}
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm h-32 focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600 resize-none"
+                placeholder="Resumo ou descrição do livro..."
+              />
             </div>
 
             <div className="space-y-1.5">

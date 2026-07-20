@@ -39,7 +39,7 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
         <div className="col-span-1 sm:col-span-2">
           <div className="text-white font-medium truncate" title={book.title}>{book.title}</div>
           <div className="text-slate-500 text-sm truncate">{book.author || 'Autor desconhecido'}</div>
-          {book.genre && <div className="text-[10px] text-slate-500 uppercase mt-1 tracking-wider">{book.genre}</div>}
+          {book.category && <div className="text-[10px] text-slate-500 uppercase mt-1 tracking-wider">{book.category}</div>}
         </div>
         
         <div className="hidden sm:block">
