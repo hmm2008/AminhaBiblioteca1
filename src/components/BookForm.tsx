@@ -73,39 +73,55 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     try {
       let query = '';
       if (formData.isbn) {
-        query = `isbn=${formData.isbn}`;
+        query = `isbn:${formData.isbn}`;
       } else if (formData.title && formData.author) {
-        query = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
+        query = `intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
       } else if (formData.title) {
-        query = `title=${encodeURIComponent(formData.title)}`;
+        query = `intitle:${encodeURIComponent(formData.title)}`;
       } else if (formData.author) {
-        query = `author=${encodeURIComponent(formData.author)}`;
+        query = `inauthor:${encodeURIComponent(formData.author)}`;
       }
 
-      if (!query) return;
+      if (!query) {
+        alert("Por favor, preencha o ISBN, Título ou Autor para pesquisar.");
+        setIsSearching(false);
+        return;
+      }
 
-      const res = await fetch(`https://openlibrary.org/search.json?${query}`);
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
       const data = await res.json();
       
-      if (data.docs && data.docs.length > 0) {
-        const bookData = data.docs[0];
+      if (data.items && data.items.length > 0) {
+        const bookData = data.items[0].volumeInfo;
         const newFormData = { ...formData };
         
         if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
-        if (!newFormData.author && bookData.author_name) newFormData.author = bookData.author_name[0];
-        if (!newFormData.isbn && bookData.isbn) newFormData.isbn = bookData.isbn[0];
+        if (!newFormData.author && bookData.authors && bookData.authors.length > 0) newFormData.author = bookData.authors[0];
         
-        if (bookData.cover_i) {
-          // Instead of downloading and converting to base64 which might fail due to CORS,
-          // We can just store the URL. But previously we used base64. 
-          // Open Library allows image hotlinking for covers! Let's store the URL.
-          newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
+        if (!newFormData.isbn && bookData.industryIdentifiers) {
+          const isbn13 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_13');
+          const isbn10 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_10');
+          if (isbn13) newFormData.isbn = isbn13.identifier;
+          else if (isbn10) newFormData.isbn = isbn10.identifier;
+        }
+
+        if (!newFormData.genre && bookData.categories && bookData.categories.length > 0) {
+          newFormData.genre = bookData.categories[0];
+        }
+        
+        if (bookData.imageLinks?.thumbnail) {
+          let coverUrl = bookData.imageLinks.thumbnail.replace('http:', 'https:');
+          coverUrl = coverUrl.replace('&edge=curl', '');
+          newFormData.coverImage = coverUrl;
         }
         
         setFormData(newFormData);
+      } else {
+        alert("Nenhum livro encontrado com os dados fornecidos.");
       }
     } catch (error) {
       console.error("Erro na pesquisa:", error);
+      alert("Ocorreu um erro ao pesquisar o livro.");
     } finally {
       setIsSearching(false);
     }
@@ -133,13 +149,13 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-950/80 backdrop-blur-sm sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm sm:p-4">
       <motion.div 
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 50 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="bg-slate-900 border-l sm:border sm:rounded-2xl border-slate-800 w-full sm:w-[360px] h-full sm:h-auto sm:max-h-[90vh] shadow-2xl flex flex-col"
+        className="bg-slate-900 border sm:rounded-2xl border-slate-800 w-full sm:w-[440px] h-full sm:h-auto sm:max-h-[90vh] shadow-2xl flex flex-col"
       >
         <div className="flex justify-between items-center p-6 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
