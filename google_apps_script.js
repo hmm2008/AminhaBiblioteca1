@@ -242,6 +242,25 @@ function handleRequest(e, method) {
       }, 200);
     }
 
+    // PESQUISAR BNP (Proxy)
+    if (data.action === "searchBNP" && data.query) {
+      try {
+        const url = "http://porbase.bnportugal.pt/sru/sru?operation=searchRetrieve&version=1.1&query=" + encodeURIComponent(data.query);
+        const options = {
+          method: "get",
+          muteHttpExceptions: true
+        };
+        const response = UrlFetchApp.fetch(url, options);
+        if (response.getResponseCode() === 200) {
+          return responseJson({ xml: response.getContentText() }, 200);
+        } else {
+          return responseJson({ error: "Erro na BNP: " + response.getResponseCode() }, response.getResponseCode());
+        }
+      } catch (e) {
+        return responseJson({ error: "Erro a contactar BNP: " + e.toString() }, 500);
+      }
+    }
+
     return responseJson({ error: "Ação desconhecida." }, 400);
 
   } catch (err) {

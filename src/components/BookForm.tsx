@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LocalBook, ReadStatus } from '../types';
+import { searchBNP } from '../lib/syncService';
 import { v4 as uuidv4 } from 'uuid';
 import { X, ScanBarcode, BookOpen, Camera, Search, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -107,72 +108,192 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       let bookFound = null;
 
       if (cleanIsbn) {
-        // 1. Pesquisa focada e em cascata apenas por ISBN/EAN
-        const isbnQueries = [
-          { url: `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`, source: 'google' },
-          { url: `https://www.googleapis.com/books/v1/volumes?q=${cleanIsbn}`, source: 'google' }, // Apanha EANs não marcados estritamente como ISBN
-          { url: `https://openlibrary.org/search.json?isbn=${cleanIsbn}`, source: 'openlibrary' },
-          { url: `https://openlibrary.org/search.json?q=${cleanIsbn}`, source: 'openlibrary' }
-        ];
-
-        for (const query of isbnQueries) {
-          if (bookFound) break;
-          try {
-            const res = await fetch(query.url);
-            if (res.ok) {
-              const data = await res.json();
-              if (query.source === 'google' && data.items && data.items.length > 0) {
-                bookFound = { source: 'google', data: data.items[0].volumeInfo };
-              } else if (query.source === 'openlibrary' && data.docs && data.docs.length > 0) {
-                bookFound = { source: 'openlibrary', data: data.docs[0] };
+        // 1. Tentar BNP primeiro para livros em PT (via Apps Script Proxy)
+        try {
+          const xmlResponse = await searchBNP(`bath.isbn=${cleanIsbn}`);
+          if (xmlResponse) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlResponse, "text/xml");
+            const records = xmlDoc.getElementsByTagName("record");
+            // Nota: Em SRU, os namespaces podem estar configurados como dc:title
+            if (records && records.length > 0) {
+              const getTag = (node: Element, tag: string) => {
+                const els = node.getElementsByTagName(tag);
+                if (els.length > 0) return els[0].textContent;
+                const elsDc = node.getElementsByTagName(`dc:${tag}`);
+                if (elsDc.length > 0) return elsDc[0].textContent;
+                return null;
+              };
+              
+              const title = getTag(records[0], "title");
+              if (title) {
+                bookFound = { 
+                  source: 'bnp', 
+                  data: {
+                    title: title,
+                    author: getTag(records[0], "creator"),
+                    publisher: getTag(records[0], "publisher"),
+                    date: getTag(records[0], "date"),
+                    language: getTag(records[0], "language")
+                  } 
+                };
               }
             }
-          } catch (e) {
-            console.error(`Erro na pesquisa por ISBN (${query.url}):`, e);
+          }
+        } catch (e) {
+          console.error("Erro na pesquisa BNP por ISBN:", e);
+        }
+
+        if (!bookFound) {
+          // 2. Pesquisa focada e em cascata apenas por ISBN/EAN (Google/OpenLibrary)
+          const isbnQueries = [
+            { url: `/api/wook?isbn=${cleanIsbn}`, source: 'wook' },
+            { url: `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`, source: 'google' },
+            { url: `https://www.googleapis.com/books/v1/volumes?q=${cleanIsbn}`, source: 'google' }, // Apanha EANs não marcados estritamente como ISBN
+            { url: `https://openlibrary.org/search.json?isbn=${cleanIsbn}`, source: 'openlibrary' },
+            { url: `https://openlibrary.org/search.json?q=${cleanIsbn}`, source: 'openlibrary' }
+          ];
+
+          for (const query of isbnQueries) {
+            if (bookFound) break;
+            try {
+              const res = await fetch(query.url);
+              if (res.ok) {
+                const data = await res.json();
+                if (query.source === 'wook' && data.titulo) {
+                  bookFound = { source: 'wook', data };
+                } else if (query.source === 'google' && data.items && data.items.length > 0) {
+                  bookFound = { source: 'google', data: data.items[0].volumeInfo };
+                } else if (query.source === 'openlibrary' && data.docs && data.docs.length > 0) {
+                  bookFound = { source: 'openlibrary', data: data.docs[0] };
+                }
+              }
+            } catch (e) {
+              console.error(`Erro na pesquisa por ISBN (${query.url}):`, e);
+            }
           }
         }
       } else {
-        // 2. Pesquisa em cascata por Título / Autor
-        let gQuery = '';
-        if (formData.title && formData.author) gQuery = `intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
-        else if (formData.title) gQuery = `intitle:${encodeURIComponent(formData.title)}`;
-        else if (formData.author) gQuery = `inauthor:${encodeURIComponent(formData.author)}`;
-
-        let oQuery = '';
-        if (formData.title && formData.author) oQuery = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
-        else if (formData.title) oQuery = `title=${encodeURIComponent(formData.title)}`;
-        else if (formData.author) oQuery = `author=${encodeURIComponent(formData.author)}`;
-
-        const textQueries = [
-          { url: `https://www.googleapis.com/books/v1/volumes?q=${gQuery}&langRestrict=pt&maxResults=3`, source: 'google' },
-          { url: `https://www.googleapis.com/books/v1/volumes?q=${gQuery}&maxResults=3`, source: 'google' },
-          { url: `https://openlibrary.org/search.json?${oQuery}`, source: 'openlibrary' }
-        ];
-
-        for (const query of textQueries) {
-          if (bookFound) break;
-          try {
-            const res = await fetch(query.url);
-            if (res.ok) {
-              const data = await res.json();
-              if (query.source === 'google' && data.items && data.items.length > 0) {
-                const bestMatch = data.items.find((item: any) => item.volumeInfo?.imageLinks) || data.items[0];
-                bookFound = { source: 'google', data: bestMatch.volumeInfo };
-              } else if (query.source === 'openlibrary' && data.docs && data.docs.length > 0) {
-                const bestMatch = data.docs.find((doc: any) => doc.cover_i) || data.docs[0];
-                bookFound = { source: 'openlibrary', data: bestMatch };
+        // Pesquisa por Título / Autor
+        
+        // 1. Tentar BNP primeiro
+        try {
+          let bnpQ = [];
+          if (formData.title) bnpQ.push(`dc.title="${formData.title}"`);
+          if (formData.author) bnpQ.push(`dc.creator="${formData.author}"`);
+          
+          if (bnpQ.length > 0) {
+            const xmlResponse = await searchBNP(bnpQ.join(" AND "));
+            if (xmlResponse) {
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(xmlResponse, "text/xml");
+              const records = xmlDoc.getElementsByTagName("record");
+              if (records && records.length > 0) {
+                const getTag = (node: Element, tag: string) => {
+                  const els = node.getElementsByTagName(tag);
+                  if (els.length > 0) return els[0].textContent;
+                  const elsDc = node.getElementsByTagName(`dc:${tag}`);
+                  if (elsDc.length > 0) return elsDc[0].textContent;
+                  return null;
+                };
+                
+                const title = getTag(records[0], "title");
+                if (title) {
+                  bookFound = { 
+                    source: 'bnp', 
+                    data: {
+                      title: title,
+                      author: getTag(records[0], "creator"),
+                      publisher: getTag(records[0], "publisher"),
+                      date: getTag(records[0], "date"),
+                      language: getTag(records[0], "language")
+                    } 
+                  };
+                }
               }
             }
-          } catch (e) {
-            console.error(`Erro na pesquisa por texto (${query.url}):`, e);
           }
+        } catch (e) {
+          console.error("Erro na pesquisa BNP por texto:", e);
+        }
+
+        if (!bookFound) {
+          // 2. Pesquisa em cascata por Título / Autor
+          let gQuery = '';
+          if (formData.title && formData.author) gQuery = `intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
+          else if (formData.title) gQuery = `intitle:${encodeURIComponent(formData.title)}`;
+          else if (formData.author) gQuery = `inauthor:${encodeURIComponent(formData.author)}`;
+
+          let oQuery = '';
+          if (formData.title && formData.author) oQuery = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
+          else if (formData.title) oQuery = `title=${encodeURIComponent(formData.title)}`;
+          else if (formData.author) oQuery = `author=${encodeURIComponent(formData.author)}`;
+
+          const textQueries = [
+            { url: `https://www.googleapis.com/books/v1/volumes?q=${gQuery}&langRestrict=pt&maxResults=3`, source: 'google' },
+            { url: `https://www.googleapis.com/books/v1/volumes?q=${gQuery}&maxResults=3`, source: 'google' },
+            { url: `https://openlibrary.org/search.json?${oQuery}`, source: 'openlibrary' }
+          ];
+
+          for (const query of textQueries) {
+            if (bookFound) break;
+            try {
+              const res = await fetch(query.url);
+              if (res.ok) {
+                const data = await res.json();
+                if (query.source === 'google' && data.items && data.items.length > 0) {
+                  const bestMatch = data.items.find((item: any) => item.volumeInfo?.imageLinks) || data.items[0];
+                  bookFound = { source: 'google', data: bestMatch.volumeInfo };
+                } else if (query.source === 'openlibrary' && data.docs && data.docs.length > 0) {
+                  const bestMatch = data.docs.find((doc: any) => doc.cover_i) || data.docs[0];
+                  bookFound = { source: 'openlibrary', data: bestMatch };
+                }
+              }
+            } catch (e) {
+              console.error(`Erro na pesquisa por texto (${query.url}):`, e);
+            }
+          }
+        }
+      }
+
+      // AI Fallback Search using our Express endpoint if previous methods failed
+      if (!bookFound) {
+        try {
+          const aiRes = await fetch('/api/ai-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              isbn: cleanIsbn,
+              title: formData.title,
+              author: formData.author
+            })
+          });
+          
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            if (aiData && aiData.title) {
+              bookFound = { source: 'ai', data: aiData };
+            }
+          }
+        } catch (e) {
+          console.error("Erro na pesquisa AI Fallback:", e);
         }
       }
 
       if (bookFound) {
         const newFormData = { ...formData };
         
-        if (bookFound.source === 'google') {
+        if (bookFound.source === 'wook') {
+          const bookData = bookFound.data;
+          if (!newFormData.title && bookData.titulo) newFormData.title = bookData.titulo;
+          if (!newFormData.author && bookData.autor) newFormData.author = bookData.autor;
+          if (!newFormData.isbn && bookData.isbn) newFormData.isbn = bookData.isbn;
+          if (!newFormData.publisher && bookData.editora) newFormData.publisher = bookData.editora;
+          if (!newFormData.publishedDate && bookData.ano) newFormData.publishedDate = bookData.ano;
+          if (!newFormData.pageCount && bookData.paginas) newFormData.pageCount = bookData.paginas;
+          if (!newFormData.language && bookData.idioma) newFormData.language = bookData.idioma;
+          if (!newFormData.coverImage && bookData.imagem) newFormData.coverImage = bookData.imagem;
+        } else if (bookFound.source === 'google') {
           const bookData = bookFound.data;
           if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
           if (!newFormData.author && bookData.authors && bookData.authors.length > 0) newFormData.author = bookData.authors[0];
@@ -199,6 +320,24 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             coverUrl = coverUrl.replace('&edge=curl', '');
             newFormData.coverImage = coverUrl;
           }
+        } else if (bookFound.source === 'bnp') {
+          const bookData = bookFound.data;
+          if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
+          if (!newFormData.author && bookData.author) newFormData.author = bookData.author;
+          if (!newFormData.publisher && bookData.publisher) newFormData.publisher = bookData.publisher;
+          if (!newFormData.publishedDate && bookData.date) newFormData.publishedDate = bookData.date;
+          if (!newFormData.language && bookData.language) newFormData.language = bookData.language;
+        } else if (bookFound.source === 'ai') {
+          const bookData = bookFound.data;
+          if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
+          if (!newFormData.author && bookData.author) newFormData.author = bookData.author;
+          if (!newFormData.isbn && bookData.isbn) newFormData.isbn = bookData.isbn;
+          if (!newFormData.publisher && bookData.publisher) newFormData.publisher = bookData.publisher;
+          if (!newFormData.publishedDate && bookData.publishedDate) newFormData.publishedDate = bookData.publishedDate;
+          if (!newFormData.pageCount && bookData.pageCount) newFormData.pageCount = bookData.pageCount;
+          if (!newFormData.language && bookData.language) newFormData.language = bookData.language;
+          if (!newFormData.description && bookData.description) newFormData.description = bookData.description;
+          if (!newFormData.category && bookData.category) newFormData.category = bookData.category;
         } else if (bookFound.source === 'openlibrary') {
           const bookData = bookFound.data;
           if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
@@ -335,8 +474,14 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg pl-3 pr-10 py-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
                   placeholder="978-0-..."
                 />
-                <button type="button" className="absolute right-3 top-2.5 text-sky-400 hover:text-white transition-colors">
-                  <ScanBarcode className="w-4 h-4" />
+                <button 
+                  type="button" 
+                  onClick={handleSearchOnline}
+                  disabled={isSearching}
+                  className="absolute right-3 top-2.5 text-sky-400 hover:text-white transition-colors disabled:opacity-50"
+                  title="Pesquisar Online por ISBN/EAN"
+                >
+                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 </button>
               </div>
             </div>
