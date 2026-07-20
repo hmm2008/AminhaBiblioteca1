@@ -1,0 +1,6 @@
+{
+  "name": "Catálogo de Livros",
+  "description": "App offline-first para gerenciar o catálogo de livros e sincronizar com Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
