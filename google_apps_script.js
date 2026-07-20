@@ -26,30 +26,6 @@ const SPREADSHEET_ID = "COLE_AQUI_O_SEU_ID";
 // CÓDIGO DO SERVIDOR (NÃO PRECISA DE ALTERAR)
 // ==============================================================================
 
-// Função auxiliar para gravar logs de depuração diretamente na folha de cálculo
-function logDebug(message, data) {
-  try {
-    const ss = (!SPREADSHEET_ID || SPREADSHEET_ID === "COLE_AQUI_O_SEU_ID" || SPREADSHEET_ID === "")
-      ? SpreadsheetApp.getActiveSpreadsheet()
-      : SpreadsheetApp.openById(SPREADSHEET_ID);
-      
-    if (!ss) return;
-    
-    let logSheet = ss.getSheetByName("DebugLogs");
-    if (!logSheet) {
-      logSheet = ss.insertSheet("DebugLogs");
-      logSheet.appendRow(["Data/Hora (UTC)", "Mensagem", "Detalhes"]);
-      logSheet.getRange("A1:C1").setFontWeight("bold");
-      logSheet.setFrozenRows(1);
-    }
-    
-    const dataString = typeof data === "object" ? JSON.stringify(data) : String(data || "");
-    logSheet.appendRow([new Date().toISOString(), message, dataString]);
-  } catch (e) {
-    // Silencioso para não quebrar a execução se a folha não abrir
-  }
-}
-
 function getSheet() {
   if (!SPREADSHEET_ID || SPREADSHEET_ID === "COLE_AQUI_O_SEU_ID" || SPREADSHEET_ID === "") {
     try {
@@ -58,7 +34,6 @@ function getSheet() {
       return getOrCreateBooksSheet(activeSs);
     } catch (e) {
       const errorMsg = "Erro Crítico: SPREADSHEET_ID não está configurado no Apps Script. Por favor, coloque o ID correto na variável SPREADSHEET_ID no início deste script e faça uma NOVA VERSÃO do deploy.";
-      logDebug("Erro Crítico no getSheet", errorMsg);
       throw new Error(errorMsg);
     }
   }
@@ -68,7 +43,6 @@ function getSheet() {
     return getOrCreateBooksSheet(ss);
   } catch (e) {
     const errorMsg = "Não foi possível abrir a folha de cálculo com o ID fornecido: '" + SPREADSHEET_ID + "'. Verifique se o ID está correto, se o script tem permissões de acesso, e faça uma NOVA VERSÃO do deploy.";
-    logDebug("Erro ao abrir ID da folha", errorMsg);
     throw new Error(errorMsg);
   }
 }
@@ -83,10 +57,8 @@ function getOrCreateBooksSheet(ss) {
     if (sheets.length === 1 && sheets[0].getDataRange().getValues().join("").trim() === "") {
       sheet = sheets[0];
       sheet.setName("Books");
-      logDebug("Primeira folha vazia renomeada para 'Books'.", "");
     } else {
       sheet = ss.insertSheet("Books");
-      logDebug("Nova folha 'Books' criada.", "");
     }
   }
   
@@ -97,7 +69,6 @@ function getOrCreateBooksSheet(ss) {
     sheet.appendRow(["id", "title", "author", "isbn", "genre", "readStatus", "rating", "notes", "dateAdded", "coverImage"]);
     sheet.getRange("A1:J1").setFontWeight("bold");
     sheet.setFrozenRows(1);
-    logDebug("Cabeçalhos criados com sucesso na folha 'Books'.", "");
   } else if (data.length > 0) {
     // Add missing coverImage header to existing sheets
     const headers = data[0];
@@ -118,7 +89,6 @@ function verificarToken(token) {
   }
   
   if (token !== AUTH_TOKEN) {
-    logDebug("Aviso de Configuração de Token", "O token enviado pelo aplicativo ('" + token + "') é diferente do token configurado no Apps Script ('" + AUTH_TOKEN + "'). Para evitar bloquear a sua sincronização, permitimos a gravação dos dados, mas recomendamos corrigir o VITE_SYNC_AUTH_TOKEN no painel de Definições/Secrets do AI Studio para '" + AUTH_TOKEN + "'.");
     return true; // Retorna true para garantir que funciona mesmo com erro de configuração!
   }
   
@@ -144,16 +114,12 @@ function handleRequest(e, method) {
       try {
         data = JSON.parse(bodyString);
       } catch (jsonErr) {
-        logDebug("Erro ao interpretar JSON no POST", { rawBody: bodyString, error: jsonErr.toString() });
         return responseJson({ error: "JSON inválido enviado: " + jsonErr.toString() }, 400);
       }
     }
 
-    logDebug("Pedido recebido (" + method + ")", { action: data.action, token_enviado: data.token });
-
     if (!verificarToken(data.token)) {
       const errorMsg = "Token inválido ou em falta. Certifique-se de que o AUTH_TOKEN no Apps Script é igual ao VITE_SYNC_AUTH_TOKEN.";
-      logDebug("Bloqueado: Token inválido", { token_enviado: data.token, token_esperado: AUTH_TOKEN });
       return responseJson({ error: errorMsg }, 401);
     }
 
@@ -177,7 +143,6 @@ function handleRequest(e, method) {
           books.push(book);
         }
       }
-      logDebug("getBooks executado com sucesso", { total_enviado: books.length });
       return responseJson({ books: books }, 200);
     }
 
@@ -253,18 +218,15 @@ function handleRequest(e, method) {
         });
       }
 
-      logDebug("Sincronização executada com sucesso", { inseridos: inseridos, atualizados: atualizados, eliminados: eliminados });
       return responseJson({ 
         success: true, 
         message: `Sincronização OK: ${inseridos} inseridos, ${atualizados} atualizados, ${eliminados} eliminados.` 
       }, 200);
     }
 
-    logDebug("Ação desconhecida", { action: data.action });
     return responseJson({ error: "Ação desconhecida." }, 400);
 
   } catch (err) {
-    logDebug("Erro inesperado no servidor", err.toString());
     return responseJson({ error: err.toString() }, 500);
   }
 }
