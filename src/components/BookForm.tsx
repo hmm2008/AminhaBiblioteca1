@@ -73,10 +73,15 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     try {
       let googleQuery = '';
       let openLibraryQuery = '';
+      
+      // Clean up ISBN (remove hyphens, spaces) if it exists
+      const cleanIsbn = formData.isbn ? formData.isbn.replace(/[- ]/g, '') : '';
 
-      if (formData.isbn) {
-        googleQuery = `q=isbn:${formData.isbn}`;
-        openLibraryQuery = `isbn=${formData.isbn}`;
+      if (cleanIsbn) {
+        // For Google Books, searching just the number sometimes yields better results than forcing "isbn:" prefix,
+        // but we can try both or a combined query.
+        googleQuery = `q=isbn:${cleanIsbn}+OR+${cleanIsbn}`;
+        openLibraryQuery = `isbn=${cleanIsbn}`;
       } else if (formData.title && formData.author) {
         googleQuery = `q=intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
         openLibraryQuery = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
@@ -89,48 +94,66 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       }
 
       if (!googleQuery) {
-        alert("Por favor, preencha o ISBN, Título ou Autor para pesquisar.");
+        alert("Por favor, preencha o ISBN/EAN, Título ou Autor para pesquisar.");
         setIsSearching(false);
         return;
       }
 
       let bookFound = null;
 
-      // 1. Tentar Google Books em Português
+      // 1. Try Google Books restricted to PT
       try {
-        const resPt = await fetch(`https://www.googleapis.com/books/v1/volumes?${googleQuery}&langRestrict=pt&maxResults=1`);
+        const resPt = await fetch(`https://www.googleapis.com/books/v1/volumes?${googleQuery}&langRestrict=pt&maxResults=3`);
         if (resPt.ok) {
           const dataPt = await resPt.json();
           if (dataPt.items && dataPt.items.length > 0) {
-            bookFound = { source: 'google', data: dataPt.items[0].volumeInfo };
+            // Find the best match, preferably with an image
+            const bestMatch = dataPt.items.find((item: any) => item.volumeInfo.imageLinks) || dataPt.items[0];
+            bookFound = { source: 'google', data: bestMatch.volumeInfo };
           }
         }
       } catch (e) { console.error("Erro Google Books PT:", e); }
 
-      // 2. Tentar Google Books Global se não encontrou
+      // 2. Try Google Books without language restriction
       if (!bookFound) {
         try {
-          const resGl = await fetch(`https://www.googleapis.com/books/v1/volumes?${googleQuery}&maxResults=1`);
+          const resGl = await fetch(`https://www.googleapis.com/books/v1/volumes?${googleQuery}&maxResults=3`);
           if (resGl.ok) {
             const dataGl = await resGl.json();
             if (dataGl.items && dataGl.items.length > 0) {
-              bookFound = { source: 'google', data: dataGl.items[0].volumeInfo };
+              const bestMatch = dataGl.items.find((item: any) => item.volumeInfo.imageLinks) || dataGl.items[0];
+              bookFound = { source: 'google', data: bestMatch.volumeInfo };
             }
           }
         } catch (e) { console.error("Erro Google Books Global:", e); }
       }
 
-      // 3. Tentar OpenLibrary se ainda não encontrou
+      // 3. Try OpenLibrary (broad API)
       if (!bookFound) {
         try {
           const resOl = await fetch(`https://openlibrary.org/search.json?${openLibraryQuery}`);
           if (resOl.ok) {
             const dataOl = await resOl.json();
             if (dataOl.docs && dataOl.docs.length > 0) {
-              bookFound = { source: 'openlibrary', data: dataOl.docs[0] };
+              // Try to find one with a cover
+              const bestMatch = dataOl.docs.find((doc: any) => doc.cover_i) || dataOl.docs[0];
+              bookFound = { source: 'openlibrary', data: bestMatch };
             }
           }
         } catch (e) { console.error("Erro OpenLibrary:", e); }
+      }
+      
+      // 4. Try Google Books using just ISBN in a simpler query if nothing worked and we are searching by ISBN
+      if (!bookFound && cleanIsbn) {
+         try {
+          const resGlIsbn = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${cleanIsbn}&maxResults=1`);
+          if (resGlIsbn.ok) {
+            const dataGlIsbn = await resGlIsbn.json();
+            if (dataGlIsbn.items && dataGlIsbn.items.length > 0) {
+              bookFound = { source: 'google', data: dataGlIsbn.items[0].volumeInfo };
+            }
+          }
+        } catch (e) { console.error("Erro Google Books ISBN Simples:", e); }
       }
 
       if (bookFound) {
@@ -149,11 +172,10 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           }
 
           if (!newFormData.genre && bookData.categories && bookData.categories.length > 0) {
-            // Traduzir alguns géneros comuns ou apenas usar o original
             newFormData.genre = bookData.categories[0];
           }
           
-          if (bookData.imageLinks?.thumbnail) {
+          if (!newFormData.coverImage && bookData.imageLinks?.thumbnail) {
             let coverUrl = bookData.imageLinks.thumbnail.replace('http:', 'https:');
             coverUrl = coverUrl.replace('&edge=curl', '');
             newFormData.coverImage = coverUrl;
@@ -164,14 +186,14 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           if (!newFormData.author && bookData.author_name && bookData.author_name.length > 0) newFormData.author = bookData.author_name[0];
           if (!newFormData.isbn && bookData.isbn && bookData.isbn.length > 0) newFormData.isbn = bookData.isbn[0];
           
-          if (bookData.cover_i) {
+          if (!newFormData.coverImage && bookData.cover_i) {
             newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
           }
         }
         
         setFormData(newFormData);
       } else {
-        alert("Nenhum livro encontrado com os dados fornecidos.");
+        alert("Nenhum livro encontrado. Tente verificar o ISBN/EAN ou procure por Título e Autor.");
       }
     } catch (error) {
       console.error("Erro na pesquisa:", error);
