@@ -71,48 +71,102 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
   const handleSearchOnline = async () => {
     setIsSearching(true);
     try {
-      let query = '';
+      let googleQuery = '';
+      let openLibraryQuery = '';
+
       if (formData.isbn) {
-        query = `isbn:${formData.isbn}`;
+        googleQuery = `q=isbn:${formData.isbn}`;
+        openLibraryQuery = `isbn=${formData.isbn}`;
       } else if (formData.title && formData.author) {
-        query = `intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
+        googleQuery = `q=intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
+        openLibraryQuery = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
       } else if (formData.title) {
-        query = `intitle:${encodeURIComponent(formData.title)}`;
+        googleQuery = `q=intitle:${encodeURIComponent(formData.title)}`;
+        openLibraryQuery = `title=${encodeURIComponent(formData.title)}`;
       } else if (formData.author) {
-        query = `inauthor:${encodeURIComponent(formData.author)}`;
+        googleQuery = `q=inauthor:${encodeURIComponent(formData.author)}`;
+        openLibraryQuery = `author=${encodeURIComponent(formData.author)}`;
       }
 
-      if (!query) {
+      if (!googleQuery) {
         alert("Por favor, preencha o ISBN, Título ou Autor para pesquisar.");
         setIsSearching(false);
         return;
       }
 
-      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
-      const data = await res.json();
-      
-      if (data.items && data.items.length > 0) {
-        const bookData = data.items[0].volumeInfo;
+      let bookFound = null;
+
+      // 1. Tentar Google Books em Português
+      try {
+        const resPt = await fetch(`https://www.googleapis.com/books/v1/volumes?${googleQuery}&langRestrict=pt&maxResults=1`);
+        if (resPt.ok) {
+          const dataPt = await resPt.json();
+          if (dataPt.items && dataPt.items.length > 0) {
+            bookFound = { source: 'google', data: dataPt.items[0].volumeInfo };
+          }
+        }
+      } catch (e) { console.error("Erro Google Books PT:", e); }
+
+      // 2. Tentar Google Books Global se não encontrou
+      if (!bookFound) {
+        try {
+          const resGl = await fetch(`https://www.googleapis.com/books/v1/volumes?${googleQuery}&maxResults=1`);
+          if (resGl.ok) {
+            const dataGl = await resGl.json();
+            if (dataGl.items && dataGl.items.length > 0) {
+              bookFound = { source: 'google', data: dataGl.items[0].volumeInfo };
+            }
+          }
+        } catch (e) { console.error("Erro Google Books Global:", e); }
+      }
+
+      // 3. Tentar OpenLibrary se ainda não encontrou
+      if (!bookFound) {
+        try {
+          const resOl = await fetch(`https://openlibrary.org/search.json?${openLibraryQuery}`);
+          if (resOl.ok) {
+            const dataOl = await resOl.json();
+            if (dataOl.docs && dataOl.docs.length > 0) {
+              bookFound = { source: 'openlibrary', data: dataOl.docs[0] };
+            }
+          }
+        } catch (e) { console.error("Erro OpenLibrary:", e); }
+      }
+
+      if (bookFound) {
         const newFormData = { ...formData };
         
-        if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
-        if (!newFormData.author && bookData.authors && bookData.authors.length > 0) newFormData.author = bookData.authors[0];
-        
-        if (!newFormData.isbn && bookData.industryIdentifiers) {
-          const isbn13 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_13');
-          const isbn10 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_10');
-          if (isbn13) newFormData.isbn = isbn13.identifier;
-          else if (isbn10) newFormData.isbn = isbn10.identifier;
-        }
+        if (bookFound.source === 'google') {
+          const bookData = bookFound.data;
+          if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
+          if (!newFormData.author && bookData.authors && bookData.authors.length > 0) newFormData.author = bookData.authors[0];
+          
+          if (!newFormData.isbn && bookData.industryIdentifiers) {
+            const isbn13 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_13');
+            const isbn10 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_10');
+            if (isbn13) newFormData.isbn = isbn13.identifier;
+            else if (isbn10) newFormData.isbn = isbn10.identifier;
+          }
 
-        if (!newFormData.genre && bookData.categories && bookData.categories.length > 0) {
-          newFormData.genre = bookData.categories[0];
-        }
-        
-        if (bookData.imageLinks?.thumbnail) {
-          let coverUrl = bookData.imageLinks.thumbnail.replace('http:', 'https:');
-          coverUrl = coverUrl.replace('&edge=curl', '');
-          newFormData.coverImage = coverUrl;
+          if (!newFormData.genre && bookData.categories && bookData.categories.length > 0) {
+            // Traduzir alguns géneros comuns ou apenas usar o original
+            newFormData.genre = bookData.categories[0];
+          }
+          
+          if (bookData.imageLinks?.thumbnail) {
+            let coverUrl = bookData.imageLinks.thumbnail.replace('http:', 'https:');
+            coverUrl = coverUrl.replace('&edge=curl', '');
+            newFormData.coverImage = coverUrl;
+          }
+        } else if (bookFound.source === 'openlibrary') {
+          const bookData = bookFound.data;
+          if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
+          if (!newFormData.author && bookData.author_name && bookData.author_name.length > 0) newFormData.author = bookData.author_name[0];
+          if (!newFormData.isbn && bookData.isbn && bookData.isbn.length > 0) newFormData.isbn = bookData.isbn[0];
+          
+          if (bookData.cover_i) {
+            newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
+          }
         }
         
         setFormData(newFormData);
