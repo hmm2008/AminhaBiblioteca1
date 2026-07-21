@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LocalBook, ReadStatus } from '../types';
 import { searchBNP } from '../lib/syncService';
 import { v4 as uuidv4 } from 'uuid';
-import { X, ScanBarcode, BookOpen, Camera, Search, Loader2 } from 'lucide-react';
+import { ScanBarcode, Camera, Search, Loader2, Info } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface BookFormProps {
@@ -13,6 +13,10 @@ interface BookFormProps {
 
 export function BookForm({ book, onSave, onClose }: BookFormProps) {
   const [isSearching, setIsSearching] = useState(false);
+  const [searchNotFound, setSearchNotFound] = useState(false);
+  const [searchMode, setSearchMode] = useState<'title' | 'author' | 'publisher'>('title');
+  const [searchValue, setSearchValue] = useState('');
+  
   const [formData, setFormData] = useState<Partial<LocalBook>>({
     title: '',
     author: '',
@@ -23,10 +27,12 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     pageCount: '',
     language: '',
     description: '',
+    status: 'Disponível',
     readStatus: 'Não Lido',
     rating: 0,
     notes: '',
     coverImage: '',
+    shelfLocation: '',
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,48 +80,46 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     }
   }, [book]);
 
-  const handleSearchOnline = async () => {
+  const executeSearch = async (type: 'online' | 'isbn') => {
     setIsSearching(true);
+    setSearchNotFound(false);
     try {
       let googleQuery = '';
       let openLibraryQuery = '';
       
-      // Clean up ISBN (remove hyphens, spaces) if it exists
       const cleanIsbn = formData.isbn ? formData.isbn.replace(/[- ]/g, '') : '';
 
-      if (cleanIsbn) {
-        // For Google Books, searching just the number sometimes yields better results than forcing "isbn:" prefix,
-        // but we can try both or a combined query.
+      if (type === 'isbn' && cleanIsbn) {
         googleQuery = `q=isbn:${cleanIsbn}+OR+${cleanIsbn}`;
         openLibraryQuery = `isbn=${cleanIsbn}`;
-      } else if (formData.title && formData.author) {
-        googleQuery = `q=intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
-        openLibraryQuery = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
-      } else if (formData.title) {
-        googleQuery = `q=intitle:${encodeURIComponent(formData.title)}`;
-        openLibraryQuery = `title=${encodeURIComponent(formData.title)}`;
-      } else if (formData.author) {
-        googleQuery = `q=inauthor:${encodeURIComponent(formData.author)}`;
-        openLibraryQuery = `author=${encodeURIComponent(formData.author)}`;
+      } else if (type === 'online' && searchValue) {
+        if (searchMode === 'title') {
+          googleQuery = `q=intitle:${encodeURIComponent(searchValue)}`;
+          openLibraryQuery = `title=${encodeURIComponent(searchValue)}`;
+        } else if (searchMode === 'author') {
+          googleQuery = `q=inauthor:${encodeURIComponent(searchValue)}`;
+          openLibraryQuery = `author=${encodeURIComponent(searchValue)}`;
+        } else {
+          googleQuery = `q=inpublisher:${encodeURIComponent(searchValue)}`;
+          openLibraryQuery = `publisher=${encodeURIComponent(searchValue)}`;
+        }
       }
 
       if (!googleQuery) {
-        alert("Por favor, preencha o ISBN/EAN, Título ou Autor para pesquisar.");
         setIsSearching(false);
         return;
       }
 
       let bookFound = null;
 
-      if (cleanIsbn) {
-        // 1. Tentar BNP primeiro para livros em PT (via Apps Script Proxy)
+      if (type === 'isbn' && cleanIsbn) {
+        // BNP
         try {
           const xmlResponse = await searchBNP(`bath.isbn=${cleanIsbn}`);
           if (xmlResponse) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlResponse, "text/xml");
             const records = xmlDoc.getElementsByTagName("record");
-            // Nota: Em SRU, os namespaces podem estar configurados como dc:title
             if (records && records.length > 0) {
               const getTag = (node: Element, tag: string) => {
                 const els = node.getElementsByTagName(tag);
@@ -124,34 +128,22 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 if (elsDc.length > 0) return elsDc[0].textContent;
                 return null;
               };
-              
               const title = getTag(records[0], "title");
               if (title) {
-                bookFound = { 
-                  source: 'bnp', 
-                  data: {
-                    title: title,
-                    author: getTag(records[0], "creator"),
-                    publisher: getTag(records[0], "publisher"),
-                    date: getTag(records[0], "date"),
-                    language: getTag(records[0], "language")
-                  } 
-                };
+                bookFound = { source: 'bnp', data: { title, author: getTag(records[0], "creator"), publisher: getTag(records[0], "publisher"), date: getTag(records[0], "date"), language: getTag(records[0], "language") } };
               }
             }
           }
         } catch (e) {
-          console.error("Erro na pesquisa BNP por ISBN:", e);
+          console.error("Erro na pesquisa BNP:", e);
         }
 
         if (!bookFound) {
-          // 2. Pesquisa focada e em cascata apenas por ISBN/EAN (Google/OpenLibrary)
           const isbnQueries = [
             { url: `/api/wook?isbn=${cleanIsbn}`, source: 'wook' },
             { url: `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`, source: 'google' },
-            { url: `https://www.googleapis.com/books/v1/volumes?q=${cleanIsbn}`, source: 'google' }, // Apanha EANs não marcados estritamente como ISBN
-            { url: `https://openlibrary.org/search.json?isbn=${cleanIsbn}`, source: 'openlibrary' },
-            { url: `https://openlibrary.org/search.json?q=${cleanIsbn}`, source: 'openlibrary' }
+            { url: `https://www.googleapis.com/books/v1/volumes?q=${cleanIsbn}`, source: 'google' },
+            { url: `https://openlibrary.org/search.json?isbn=${cleanIsbn}`, source: 'openlibrary' }
           ];
 
           for (const query of isbnQueries) {
@@ -169,120 +161,55 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 }
               }
             } catch (e) {
-              console.error(`Erro na pesquisa por ISBN (${query.url}):`, e);
+              console.error(`Erro na pesquisa (${query.url}):`, e);
             }
           }
         }
       } else {
-        // Pesquisa por Título / Autor
-        
-        // 1. Tentar BNP primeiro
-        try {
-          let bnpQ = [];
-          if (formData.title) bnpQ.push(`dc.title="${formData.title}"`);
-          if (formData.author) bnpQ.push(`dc.creator="${formData.author}"`);
-          
-          if (bnpQ.length > 0) {
-            const xmlResponse = await searchBNP(bnpQ.join(" AND "));
-            if (xmlResponse) {
-              const parser = new DOMParser();
-              const xmlDoc = parser.parseFromString(xmlResponse, "text/xml");
-              const records = xmlDoc.getElementsByTagName("record");
-              if (records && records.length > 0) {
-                const getTag = (node: Element, tag: string) => {
-                  const els = node.getElementsByTagName(tag);
-                  if (els.length > 0) return els[0].textContent;
-                  const elsDc = node.getElementsByTagName(`dc:${tag}`);
-                  if (elsDc.length > 0) return elsDc[0].textContent;
-                  return null;
-                };
-                
-                const title = getTag(records[0], "title");
-                if (title) {
-                  bookFound = { 
-                    source: 'bnp', 
-                    data: {
-                      title: title,
-                      author: getTag(records[0], "creator"),
-                      publisher: getTag(records[0], "publisher"),
-                      date: getTag(records[0], "date"),
-                      language: getTag(records[0], "language")
-                    } 
-                  };
-                }
+        const textQueries = [
+          { url: `https://www.googleapis.com/books/v1/volumes?q=${googleQuery}&langRestrict=pt&maxResults=3`, source: 'google' },
+          { url: `https://www.googleapis.com/books/v1/volumes?q=${googleQuery}&maxResults=3`, source: 'google' },
+          { url: `https://openlibrary.org/search.json?${openLibraryQuery}`, source: 'openlibrary' }
+        ];
+
+        for (const query of textQueries) {
+          if (bookFound) break;
+          try {
+            const res = await fetch(query.url);
+            if (res.ok) {
+              const data = await res.json();
+              if (query.source === 'google' && data.items && data.items.length > 0) {
+                const bestMatch = data.items.find((item: any) => item.volumeInfo?.imageLinks) || data.items[0];
+                bookFound = { source: 'google', data: bestMatch.volumeInfo };
+              } else if (query.source === 'openlibrary' && data.docs && data.docs.length > 0) {
+                const bestMatch = data.docs.find((doc: any) => doc.cover_i) || data.docs[0];
+                bookFound = { source: 'openlibrary', data: bestMatch };
               }
             }
-          }
-        } catch (e) {
-          console.error("Erro na pesquisa BNP por texto:", e);
-        }
-
-        if (!bookFound) {
-          // 2. Pesquisa em cascata por Título / Autor
-          let gQuery = '';
-          if (formData.title && formData.author) gQuery = `intitle:${encodeURIComponent(formData.title)}+inauthor:${encodeURIComponent(formData.author)}`;
-          else if (formData.title) gQuery = `intitle:${encodeURIComponent(formData.title)}`;
-          else if (formData.author) gQuery = `inauthor:${encodeURIComponent(formData.author)}`;
-
-          let oQuery = '';
-          if (formData.title && formData.author) oQuery = `title=${encodeURIComponent(formData.title)}&author=${encodeURIComponent(formData.author)}`;
-          else if (formData.title) oQuery = `title=${encodeURIComponent(formData.title)}`;
-          else if (formData.author) oQuery = `author=${encodeURIComponent(formData.author)}`;
-
-          const textQueries = [
-            { url: `https://www.googleapis.com/books/v1/volumes?q=${gQuery}&langRestrict=pt&maxResults=3`, source: 'google' },
-            { url: `https://www.googleapis.com/books/v1/volumes?q=${gQuery}&maxResults=3`, source: 'google' },
-            { url: `https://openlibrary.org/search.json?${oQuery}`, source: 'openlibrary' }
-          ];
-
-          for (const query of textQueries) {
-            if (bookFound) break;
-            try {
-              const res = await fetch(query.url);
-              if (res.ok) {
-                const data = await res.json();
-                if (query.source === 'google' && data.items && data.items.length > 0) {
-                  const bestMatch = data.items.find((item: any) => item.volumeInfo?.imageLinks) || data.items[0];
-                  bookFound = { source: 'google', data: bestMatch.volumeInfo };
-                } else if (query.source === 'openlibrary' && data.docs && data.docs.length > 0) {
-                  const bestMatch = data.docs.find((doc: any) => doc.cover_i) || data.docs[0];
-                  bookFound = { source: 'openlibrary', data: bestMatch };
-                }
-              }
-            } catch (e) {
-              console.error(`Erro na pesquisa por texto (${query.url}):`, e);
-            }
+          } catch (e) {
+            console.error(`Erro na pesquisa texto (${query.url}):`, e);
           }
         }
       }
 
-      // AI Fallback Search using our Express endpoint if previous methods failed
-      if (!bookFound) {
+      if (!bookFound && type === 'isbn') {
         try {
           const aiRes = await fetch('/api/ai-search', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              isbn: cleanIsbn,
-              title: formData.title,
-              author: formData.author
-            })
+            body: JSON.stringify({ isbn: cleanIsbn })
           });
-          
           if (aiRes.ok) {
             const aiData = await aiRes.json();
-            if (aiData && aiData.title) {
-              bookFound = { source: 'ai', data: aiData };
-            }
+            if (aiData && aiData.title) bookFound = { source: 'ai', data: aiData };
           }
         } catch (e) {
-          console.error("Erro na pesquisa AI Fallback:", e);
+          console.error("Erro AI:", e);
         }
       }
 
       if (bookFound) {
         const newFormData = { ...formData };
-        
         if (bookFound.source === 'wook') {
           const bookData = bookFound.data;
           if (!newFormData.title && bookData.titulo) newFormData.title = bookData.titulo;
@@ -297,36 +224,22 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           const bookData = bookFound.data;
           if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
           if (!newFormData.author && bookData.authors && bookData.authors.length > 0) newFormData.author = bookData.authors[0];
-          
           if (!newFormData.isbn && bookData.industryIdentifiers) {
             const isbn13 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_13');
-            const isbn10 = bookData.industryIdentifiers.find((id: any) => id.type === 'ISBN_10');
             if (isbn13) newFormData.isbn = isbn13.identifier;
-            else if (isbn10) newFormData.isbn = isbn10.identifier;
           }
-
-          if (!newFormData.category && bookData.categories && bookData.categories.length > 0) {
-            newFormData.category = bookData.categories[0];
-          }
-          
+          if (!newFormData.category && bookData.categories && bookData.categories.length > 0) newFormData.category = bookData.categories[0];
           if (!newFormData.publisher && bookData.publisher) newFormData.publisher = bookData.publisher;
           if (!newFormData.publishedDate && bookData.publishedDate) newFormData.publishedDate = bookData.publishedDate;
           if (!newFormData.pageCount && bookData.pageCount) newFormData.pageCount = bookData.pageCount;
           if (!newFormData.language && bookData.language) newFormData.language = bookData.language;
           if (!newFormData.description && bookData.description) newFormData.description = bookData.description;
-
-          if (!newFormData.coverImage && bookData.imageLinks?.thumbnail) {
-            let coverUrl = bookData.imageLinks.thumbnail.replace('http:', 'https:');
-            coverUrl = coverUrl.replace('&edge=curl', '');
-            newFormData.coverImage = coverUrl;
-          }
+          if (!newFormData.coverImage && bookData.imageLinks?.thumbnail) newFormData.coverImage = bookData.imageLinks.thumbnail.replace('http:', 'https:').replace('&edge=curl', '');
         } else if (bookFound.source === 'bnp') {
           const bookData = bookFound.data;
           if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
           if (!newFormData.author && bookData.author) newFormData.author = bookData.author;
           if (!newFormData.publisher && bookData.publisher) newFormData.publisher = bookData.publisher;
-          if (!newFormData.publishedDate && bookData.date) newFormData.publishedDate = bookData.date;
-          if (!newFormData.language && bookData.language) newFormData.language = bookData.language;
         } else if (bookFound.source === 'ai') {
           const bookData = bookFound.data;
           if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
@@ -343,24 +256,17 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           if (!newFormData.title && bookData.title) newFormData.title = bookData.title;
           if (!newFormData.author && bookData.author_name && bookData.author_name.length > 0) newFormData.author = bookData.author_name[0];
           if (!newFormData.isbn && bookData.isbn && bookData.isbn.length > 0) newFormData.isbn = bookData.isbn[0];
-          
           if (!newFormData.publisher && bookData.publisher && bookData.publisher.length > 0) newFormData.publisher = bookData.publisher[0];
-          if (!newFormData.publishedDate && bookData.first_publish_year) newFormData.publishedDate = String(bookData.first_publish_year);
-          if (!newFormData.pageCount && bookData.number_of_pages_median) newFormData.pageCount = bookData.number_of_pages_median;
-          if (!newFormData.language && bookData.language && bookData.language.length > 0) newFormData.language = bookData.language[0];
-
-          if (!newFormData.coverImage && bookData.cover_i) {
-            newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
-          }
+          if (!newFormData.coverImage && bookData.cover_i) newFormData.coverImage = `https://covers.openlibrary.org/b/id/${bookData.cover_i}-L.jpg`;
         }
         
         setFormData(newFormData);
       } else {
-        alert("Nenhum livro encontrado. Tente verificar o ISBN/EAN ou procure por Título e Autor.");
+        setSearchNotFound(true);
       }
     } catch (error) {
       console.error("Erro na pesquisa:", error);
-      alert("Ocorreu um erro ao pesquisar o livro.");
+      setSearchNotFound(true);
     } finally {
       setIsSearching(false);
     }
@@ -376,6 +282,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       author: formData.author || '',
       isbn: formData.isbn || '',
       category: formData.category || '',
+      status: formData.status || 'Disponível',
       readStatus: formData.readStatus as ReadStatus || 'Não Lido',
       rating: formData.rating || 0,
       notes: formData.notes || '',
@@ -386,6 +293,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       pageCount: formData.pageCount || '',
       language: formData.language || '',
       description: formData.description || '',
+      shelfLocation: formData.shelfLocation || '',
       syncStatus: 'pending',
     };
 
@@ -393,245 +301,217 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm sm:p-4">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="bg-slate-900 border sm:rounded-2xl border-slate-800 w-full sm:w-[440px] h-full sm:h-auto sm:max-h-[90vh] shadow-2xl flex flex-col"
-      >
-        <div className="flex justify-between items-center p-6 border-b border-slate-800 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">
-              <BookOpen className="w-3.5 h-3.5" />
-            </div>
-            <h3 className="text-lg font-bold text-white tracking-tight">{book ? 'Editar Registo' : 'Novo Registo'}</h3>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+    <div className="max-w-3xl mx-auto space-y-6 pb-20">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-800">{book ? 'Editar Livro' : 'Adicionar Livro'}</h2>
+        <p className="text-slate-500 mt-1">Insere o ISBN/EAN para pesquisar os dados automaticamente.</p>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <h3 className="font-semibold text-slate-800 mb-4">Pesquisa Online</h3>
+        <div className="flex gap-2 mb-3">
+          {['title', 'author', 'publisher'].map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setSearchMode(mode as any)}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                searchMode === mode ? 'bg-[#1a5eb8] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {mode === 'title' ? 'Título' : mode === 'author' ? 'Autor' : 'Editora'}
+            </button>
+          ))}
         </div>
-
-        <div className="overflow-y-auto p-6 flex-1 custom-scrollbar">
-          <form id="book-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
-            
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Título do Livro *</label>
-              <div className="relative">
-                <input 
-                  required
-                  autoFocus
-                  type="text" 
-                  value={formData.title}
-                  onChange={e => setFormData({...formData, title: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg pl-3 pr-10 py-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="Ex: O Alquimista"
-                />
-                <button 
-                  type="button" 
-                  onClick={handleSearchOnline}
-                  disabled={isSearching}
-                  className="absolute right-3 top-2.5 text-sky-400 hover:text-white transition-colors disabled:opacity-50"
-                  title="Pesquisar Online por este Título"
-                >
-                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Autor</label>
-                <input 
-                  type="text" 
-                  value={formData.author || ''}
-                  onChange={e => setFormData({...formData, author: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="Nome"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Categoria</label>
-                <input 
-                  type="text" 
-                  value={formData.category || ''}
-                  onChange={e => setFormData({...formData, category: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="Ex: Ficção"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">ISBN / EAN</label>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={formData.isbn || ''}
-                  onChange={e => setFormData({...formData, isbn: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg pl-3 pr-10 py-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="978-0-..."
-                />
-                <button 
-                  type="button" 
-                  onClick={handleSearchOnline}
-                  disabled={isSearching}
-                  className="absolute right-3 top-2.5 text-sky-400 hover:text-white transition-colors disabled:opacity-50"
-                  title="Pesquisar Online por ISBN/EAN"
-                >
-                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Editora</label>
-                <input 
-                  type="text" 
-                  value={formData.publisher || ''}
-                  onChange={e => setFormData({...formData, publisher: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="Ex: Porto Editora"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Data de Lançamento</label>
-                <input 
-                  type="text" 
-                  value={formData.publishedDate || ''}
-                  onChange={e => setFormData({...formData, publishedDate: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="AAAA-MM-DD ou AAAA"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Nº de Páginas</label>
-                <input 
-                  type="number" 
-                  value={formData.pageCount || ''}
-                  onChange={e => setFormData({...formData, pageCount: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="Ex: 350"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Idioma</label>
-                <input 
-                  type="text" 
-                  value={formData.language || ''}
-                  onChange={e => setFormData({...formData, language: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600"
-                  placeholder="Ex: pt"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Estado de Leitura</label>
-              <div className="grid grid-cols-3 gap-2">
-                {['Lido', 'A ler', 'Não Lido'].map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setFormData({...formData, readStatus: status as ReadStatus})}
-                    className={`text-[10px] py-1.5 border rounded font-medium uppercase tracking-wider transition-colors ${
-                      formData.readStatus === status 
-                        ? 'bg-slate-800 border-slate-600 text-white shadow-inner' 
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900'
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Avaliação</label>
-              <div className="flex gap-1 text-sky-400 cursor-pointer">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    onClick={() => setFormData({...formData, rating: star === formData.rating ? 0 : star})}
-                    className={`text-xl hover:scale-110 transition-transform ${star <= (formData.rating || 0) ? 'text-sky-400' : 'text-slate-700'}`}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Capa do Livro</label>
-              <div className="flex mb-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                />
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="relative w-24 h-32 rounded-xl border-2 border-dashed border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center cursor-pointer hover:border-sky-500 hover:bg-slate-800 transition-all overflow-hidden group"
-                >
-                  {formData.coverImage ? (
-                    <>
-                      <img src={formData.coverImage} alt="Capa" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <Camera className="w-6 h-6 text-white" />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center text-slate-500 group-hover:text-sky-400 transition-colors">
-                      <Camera className="w-6 h-6 mb-1" />
-                      <span className="text-[8px] uppercase font-bold tracking-wider text-center px-2">Adicionar Capa</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Sinopse / Conteúdo</label>
-              <textarea 
-                value={formData.description || ''}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm h-32 focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600 resize-none"
-                placeholder="Resumo ou descrição do livro..."
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Notas e Citações</label>
-              <textarea 
-                value={formData.notes}
-                onChange={e => setFormData({...formData, notes: e.target.value})}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 text-sm h-24 focus:outline-none focus:border-sky-500 transition-all placeholder-slate-600 resize-none"
-                placeholder="Anotações pessoais..."
-              />
-            </div>
-
-          </form>
-        </div>
-
-        <div className="p-6 border-t border-slate-800 shrink-0 bg-slate-900 sm:rounded-b-2xl">
+        <div className="flex gap-3">
+          <input 
+            type="text" 
+            value={searchValue}
+            onChange={e => setSearchValue(e.target.value)}
+            className="flex-1 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+            placeholder={`Ex: ${searchMode === 'title' ? 'O Nome da Rosa' : searchMode === 'author' ? 'Umberto Eco' : 'Gradiva'}`}
+          />
           <button 
-            form="book-form"
-            type="submit"
-            className="w-full py-3 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold tracking-wide rounded-xl shadow-[0_4px_14px_0_rgba(14,165,233,0.39)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.23)] active:scale-[0.98] transition-all"
+            onClick={() => executeSearch('online')}
+            disabled={isSearching}
+            className="bg-[#8bb4eb]/30 text-[#1a5eb8] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
           >
-            Guardar Livro
+            {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            Pesquisar
           </button>
         </div>
+      </div>
 
-      </motion.div>
+      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
+        <div>
+          <h3 className="font-semibold text-slate-800 mb-4">Pesquisa por ISBN / EAN</h3>
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">#</span>
+              <input 
+                type="text" 
+                value={formData.isbn || ''}
+                onChange={e => setFormData({...formData, isbn: e.target.value})}
+                className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+                placeholder="Ex: 9789720049964"
+              />
+            </div>
+            <button 
+              onClick={() => executeSearch('isbn')}
+              disabled={isSearching}
+              className="bg-[#8bb4eb]/30 text-[#1a5eb8] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
+            >
+              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Pesquisar
+            </button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
+          <div className="relative flex justify-center"><span className="bg-white px-4 text-xs text-slate-400 bg-white">ou</span></div>
+        </div>
+
+        <button className="w-full py-4 rounded-xl border-2 border-dashed border-[#8bb4eb] text-[#1a5eb8] bg-[#8bb4eb]/10 hover:bg-[#8bb4eb]/20 text-sm font-medium flex items-center justify-center gap-2 transition-colors">
+          <ScanBarcode className="w-5 h-5" />
+          Fotografar ou carregar imagem do código de barras
+        </button>
+
+        {searchNotFound && (
+          <div className="bg-blue-50 border border-blue-100 text-blue-700 p-4 rounded-lg flex gap-3 text-sm">
+            <Info className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="font-medium">Livro não encontrado online.</p>
+              <p>Podes preencher os dados manualmente abaixo.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div className="mb-6">
+          <h3 className="font-semibold text-slate-800">Dados do Livro</h3>
+          <p className="text-sm text-slate-500">Preenche os campos manualmente.</p>
+        </div>
+
+        <form id="book-form" onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">TÍTULO *</label>
+            <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">AUTOR(ES)</label>
+            <input type="text" value={formData.author || ''} onChange={e => setFormData({...formData, author: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">EDITORA</label>
+            <input type="text" value={formData.publisher || ''} onChange={e => setFormData({...formData, publisher: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">ANO DE PUBLICAÇÃO</label>
+            <input type="text" value={formData.publishedDate || ''} onChange={e => setFormData({...formData, publishedDate: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">ISBN / EAN</label>
+            <input type="text" value={formData.isbn || ''} onChange={e => setFormData({...formData, isbn: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">Nº DE PÁGINAS</label>
+            <input type="text" value={formData.pageCount || ''} onChange={e => setFormData({...formData, pageCount: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">IDIOMA</label>
+            <select value={formData.language || ''} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+              <option value="">Selecione o idioma...</option>
+              <option value="pt">Português</option>
+              <option value="en">Inglês</option>
+              <option value="es">Espanhol</option>
+              <option value="fr">Francês</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">LOCALIZAÇÃO NA PRATELEIRA</label>
+            <input type="text" value={formData.shelfLocation || ''} onChange={e => setFormData({...formData, shelfLocation: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">TEMA / CATEGORIA</label>
+            <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+              <option value="">Selecionar tema...</option>
+              <option value="Ficção">Ficção</option>
+              <option value="Economia/Gestão">Economia/Gestão</option>
+              <option value="Saúde e Nutrição">Saúde e Nutrição</option>
+              <option value="Desenvolvimento Pessoal">Desenvolvimento Pessoal</option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5 pt-2">
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">CAPA DO LIVRO</label>
+              <div className="flex gap-3 text-xs text-[#1a5eb8]">
+                <button type="button" onClick={() => fileInputRef.current?.click()}>Colar imagem</button>
+                <button type="button">URL manual</button>
+                <button type="button">Pesquisar capas</button>
+              </div>
+            </div>
+            <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
+            {formData.coverImage ? (
+               <div className="relative w-24 h-32 rounded border border-slate-200 overflow-hidden">
+                 <img src={formData.coverImage} className="w-full h-full object-cover" />
+                 <button type="button" onClick={() => setFormData({...formData, coverImage: ''})} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><ScanBarcode className="w-3 h-3" /></button>
+               </div>
+            ) : (
+              <div className="w-full h-32 border border-slate-200 rounded-lg flex items-center justify-center bg-slate-50 text-slate-400">
+                Sem capa
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">SINOPSE / DESCRIÇÃO</label>
+            <textarea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-32 focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 resize-none" />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">NOTAS PESSOAIS</label>
+            <textarea value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 resize-none" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">ESTADO</label>
+              <select value={formData.status || 'Disponível'} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+                <option value="Disponível">Disponível</option>
+                <option value="Emprestado">Emprestado</option>
+                <option value="Extraviado">Extraviado</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">ESTADO DE LEITURA</label>
+              <select value={formData.readStatus || 'Não Lido'} onChange={e => setFormData({...formData, readStatus: e.target.value as ReadStatus})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+                <option value="Não Lido">Não lido</option>
+                <option value="A ler">A ler</option>
+                <option value="Lido">Lido</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div className="flex gap-4 justify-end">
+        <button onClick={onClose} className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit" form="book-form" className="px-8 py-2.5 bg-[#1a5eb8] text-white font-semibold rounded-lg hover:bg-[#154a93] transition-colors shadow-sm">
+          Guardar Livro
+        </button>
+      </div>
     </div>
   );
 }

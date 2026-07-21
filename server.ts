@@ -2,6 +2,8 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
+import https from "https";
+import axios from "axios";
 
 async function startServer() {
   const app = express();
@@ -10,7 +12,7 @@ async function startServer() {
   // Middleware
   app.use(express.json());
 
-  // API Proxy para BNP (Biblioteca Nacional de Portugal)
+    // API Proxy para BNP (Biblioteca Nacional de Portugal)
   app.get("/api/bnp", async (req, res) => {
     try {
       const query = req.query.query as string;
@@ -18,23 +20,26 @@ async function startServer() {
         return res.status(400).json({ error: "Missing query parameter" });
       }
 
-      // Ignore cert errors for this specific broken endpoint
-      const fetchOptions = {
-        redirect: 'follow' as RequestRedirect,
-      };
+      const agent = new https.Agent({
+        rejectUnauthorized: false
+      });
       
       const url = `http://porbase.bnportugal.pt/sru/sru?operation=searchRetrieve&version=1.1&query=${encodeURIComponent(query)}`;
       
-      // We know this endpoint is mostly broken now, but we keep it just in case
-      const response = await fetch(url, fetchOptions);
-      if (!response.ok) {
-        throw new Error(`BNP responded with status: ${response.status}`);
+      const response = await axios.get(url, {
+        httpsAgent: agent,
+        timeout: 10000,
+        validateStatus: () => true, // resolve on any status
+      }).catch(e => null);
+
+      if (!response || response.status !== 200) {
+        throw new Error(`BNP responded with status: ${response ? response.status : 'Network Error'}`);
       }
 
-      const xml = await response.text();
+      const xml = response.data;
       res.send(xml);
     } catch (error: any) {
-      console.error("Error proxying to BNP:", error);
+      console.error("Error proxying to BNP:", error.message);
       res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
@@ -61,7 +66,7 @@ async function startServer() {
       prompt += "\nSe não encontrares o livro ou não tiveres a certeza, retorna um JSON vazio: {}";
 
       const response = await ai.models.generateContent({
-        model: "gemini-flash-latest",
+        model: "gemini-3.6-flash", // Updated to supported model
         contents: prompt,
         config: {
           temperature: 0.2,
@@ -76,8 +81,9 @@ async function startServer() {
       const bookData = JSON.parse(text);
       res.json(bookData);
     } catch (error: any) {
-      console.error("Error with Gemini API:", error);
-      res.status(500).json({ error: error.message || "Internal server error" });
+      console.error("Error with Gemini API:", error.message);
+      // Return empty JSON instead of error to allow fallback flow to continue
+      res.json({});
     }
   });
 
@@ -101,8 +107,19 @@ async function startServer() {
       
       const response = await axios.get(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'pt-PT,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1'
+        },
+        timeout: 10000
       });
 
       const $ = cheerio.load(response.data);
@@ -144,7 +161,8 @@ async function startServer() {
 
     } catch (error: any) {
       console.error("Erro na pesquisa WOOK:", error.message);
-      res.status(500).json({ erro: `Falha na ligação: ${error.message}` });
+      // Return 404 so client can ignore and continue
+      res.status(404).json({ erro: `Falha na ligação: ${error.message}` });
     }
   });
 

@@ -1,4 +1,5 @@
 export type ReadStatus = 'Lido' | 'A ler' | 'Não Lido';
+export type BookStatus = 'Disponível' | 'Emprestado' | 'Extraviado';
 
 export interface Book {
   id: string;
@@ -7,6 +8,7 @@ export interface Book {
   isbn: string;
   category: string;
   readStatus: ReadStatus;
+  status?: BookStatus;
   rating: number; // 1 to 5
   notes: string;
   dateAdded: string; // ISO String
@@ -16,6 +18,7 @@ export interface Book {
   pageCount?: string | number;
   language?: string;
   description?: string;
+  shelfLocation?: string;
 }
 
 export type SyncStatus = 'pending' | 'synced' | 'deleted';
