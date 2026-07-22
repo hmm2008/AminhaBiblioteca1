@@ -62,7 +62,7 @@ function getOrCreateBooksSheet(ss) {
     }
   }
   
-  const expectedHeaders = ["id", "title", "author", "isbn", "category", "readStatus", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description"];
+  const expectedHeaders = ["id", "title", "author", "isbn", "category", "readStatus", "status", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description", "shelfLocation"];
 
   // Garantir cabeçalhos se a folha estiver vazia
   const data = sheet.getDataRange().getValues();
@@ -170,7 +170,7 @@ function handleRequest(e, method) {
       let headers = existingData[0] || [];
       
       if (!headers || headers.join("").trim() === "") {
-        headers = ["id", "title", "author", "isbn", "category", "readStatus", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description"];
+        headers = ["id", "title", "author", "isbn", "category", "readStatus", "status", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description", "shelfLocation"];
       }
 
       let eliminados = 0;
@@ -220,6 +220,8 @@ function handleRequest(e, method) {
           const rowData = headers.map(header => {
             if (header === 'dateAdded' && !book[header]) return new Date().toISOString();
             if (header === 'rating' && book[header] === undefined) return 0;
+            if (header === 'status' && !book[header]) return 'Disponível';
+            if (header === 'readStatus' && !book[header]) return 'Não Lido';
             // Handle legacy genre
             if (header === 'category' && book['genre'] && !book['category']) return book['genre'];
             return book[header] !== undefined ? book[header] : "";
