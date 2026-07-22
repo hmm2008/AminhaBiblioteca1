@@ -3,8 +3,10 @@ import { Home, Library, PlusCircle, Bookmark, Users, BarChart2, Archive, Setting
 import { useBooks } from '../BookContext';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'add' | 'library';
-  setCurrentView: (view: 'dashboard' | 'add' | 'library') => void;
+  currentView: string;
+  setCurrentView: (view: any) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 function timeSince(date: Date) {
@@ -22,7 +24,7 @@ function timeSince(date: Date) {
   return Math.floor(seconds) + " seg";
 }
 
-export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
+export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: SidebarProps) {
   const { isSyncing, lastSync, syncError, sync, books } = useBooks();
   const pendingCount = books.filter(b => b.syncStatus === 'pending').length;
 
@@ -39,7 +41,19 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 bg-[#1a5eb8] text-white flex flex-col h-screen shrink-0 relative z-10">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#1a5eb8] text-white flex flex-col h-screen shrink-0 transition-transform duration-300 ease-in-out
+        lg:relative lg:translate-x-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
       <div className="p-6">
         <div className="flex items-center gap-3">
           <Library className="w-6 h-6" />
@@ -51,7 +65,7 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
         <ul className="space-y-1 px-3">
           {navItems.map((item) => {
             const isActive = currentView === item.id;
-            const isWired = item.id === 'dashboard' || item.id === 'add' || item.id === 'library';
+            const isWired = ['dashboard', 'add', 'library', 'themes', 'borrowed', 'reports'].includes(item.id);
             
             return (
               <li key={item.id}>
@@ -107,5 +121,6 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
         </div>
       </div>
     </aside>
+    </>
   );
 }
