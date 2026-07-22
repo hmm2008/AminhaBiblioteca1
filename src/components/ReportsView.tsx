@@ -7,6 +7,8 @@ export function ReportsView() {
   const [exportFilter, setExportFilter] = useState<'todos' | 'lidos' | 'emprestados' | 'extraviados' | 'nao-lidos'>('todos');
   const [showPdfPreview, setShowPdfPreview] = useState(false);
 
+  const [showExportConfirm, setShowExportConfirm] = useState<'csv' | 'json' | null>(null);
+
   // Stats calculations
   const totalBooks = books.length;
   const lidosCount = books.filter(b => b.readStatus === 'Lido').length;
@@ -30,10 +32,7 @@ export function ReportsView() {
     }
   });
 
-  const handleExportCSV = () => {
-    if (!window.confirm(`Deseja gravar a exportação CSV com ${filteredBooks.length} livro(s)?\n\nClique OK para gravar ou Cancelar para abortar.`)) {
-      return;
-    }
+  const executeExportCSV = () => {
     const headers = ['Título', 'Autor', 'Tema', 'Estado', 'Estado de leitura', 'Ano', 'ISBN'];
     const csvContent = [
       headers.join(','),
@@ -53,23 +52,24 @@ export function ReportsView() {
     link.href = URL.createObjectURL(blob);
     link.download = 'biblioteca.csv';
     link.click();
+    setShowExportConfirm(null);
   };
 
-  const handleExportJSON = () => {
-    if (!window.confirm(`Deseja gravar a exportação JSON com ${filteredBooks.length} livro(s)?\n\nClique OK para gravar ou Cancelar para abortar.`)) {
-      return;
-    }
+  const executeExportJSON = () => {
     const blob = new Blob([JSON.stringify(filteredBooks, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'biblioteca.json';
     link.click();
+    setShowExportConfirm(null);
   };
 
-  const handlePrint = () => {
-    if (window.confirm(`Deseja imprimir o relatório de ${filteredBooks.length} livro(s)?\n\nClique OK para imprimir ou Cancelar para abortar.`)) {
-      window.print();
-    }
+  const handleExportCSV = () => {
+    setShowExportConfirm('csv');
+  };
+
+  const handleExportJSON = () => {
+    setShowExportConfirm('json');
   };
 
   const handleExportPDF = () => {
@@ -149,7 +149,7 @@ export function ReportsView() {
             <h3 className="text-base font-bold text-slate-800 mb-1">Exportar</h3>
             <p className="text-xs text-slate-500 mb-4">{filteredBooks.length} livro(s) serão incluídos na exportação.</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <button onClick={handleExportCSV} className="text-left p-4 rounded-xl border border-green-200 bg-green-50/50 hover:bg-green-50 transition-colors group">
                 <Download className="w-5 h-5 text-green-600 mb-3" />
                 <h4 className="font-bold text-green-900 text-sm mb-1">Exportar CSV</h4>
@@ -159,11 +159,6 @@ export function ReportsView() {
                 <FileJson className="w-5 h-5 text-blue-600 mb-3" />
                 <h4 className="font-bold text-blue-900 text-sm mb-1">Exportar JSON</h4>
                 <p className="text-xs text-blue-700/70">Formato estruturado para programadores</p>
-              </button>
-              <button onClick={handlePrint} className="text-left p-4 rounded-xl border border-purple-200 bg-purple-50/50 hover:bg-purple-50 transition-colors group">
-                <Printer className="w-5 h-5 text-purple-600 mb-3" />
-                <h4 className="font-bold text-purple-900 text-sm mb-1">Imprimir Relatório</h4>
-                <p className="text-xs text-purple-700/70">Relatório formatado para impressão</p>
               </button>
               <button onClick={handleExportPDF} className="text-left p-4 rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-50 transition-colors group">
                 <FileText className="w-5 h-5 text-red-600 mb-3" />
@@ -295,6 +290,39 @@ export function ReportsView() {
               >
                 <Printer className="w-4 h-4" />
                 Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Confirmation Modal */}
+      {showExportConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4 text-[#1a5eb8] mx-auto">
+                <Download className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
+                Exportar para {showExportConfirm === 'csv' ? 'CSV' : 'JSON'}
+              </h3>
+              <p className="text-sm text-slate-500 text-center">
+                Tem a certeza que deseja gravar a exportação com {filteredBooks.length} livro(s)?
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => setShowExportConfirm(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={showExportConfirm === 'csv' ? executeExportCSV : executeExportJSON}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[#1a5eb8] text-white hover:bg-[#154a93] transition-colors"
+              >
+                Gravar
               </button>
             </div>
           </div>
