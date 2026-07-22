@@ -18,12 +18,13 @@ export async function syncBooks(): Promise<void> {
 
   // 1. Obter todos os livros pendentes de envio e marcados para eliminação
   const pendingBooks = await getPendingBooks();
-  const deletedBooks = await getDeletedBooks();
+  const allDeletedBooks = await getDeletedBooks();
+  const pendingDeletedBooks = allDeletedBooks.filter(b => b.syncStatus === 'deleted');
   
-  if (pendingBooks.length > 0 || deletedBooks.length > 0) {
+  if (pendingBooks.length > 0 || pendingDeletedBooks.length > 0) {
     // 2. Enviar livros pendentes e IDs eliminados para o servidor
     const booksToSync: Book[] = pendingBooks.map(({ syncStatus, ...rest }) => rest);
-    const deletedIds = deletedBooks.map(b => b.id);
+    const deletedIds = pendingDeletedBooks.map(b => b.id);
         
     try {
       const response = await fetch(API_URL, {
@@ -61,9 +62,9 @@ export async function syncBooks(): Promise<void> {
         await saveBook({ ...book, syncStatus: 'synced' });
       }
 
-      // Eliminar definitivamente localmente os livros eliminados e confirmados pelo Sheets
-      for (const book of deletedBooks) {
-        await hardDeleteBook(book.id);
+      // Em vez de eliminar definitivamente, marcamos como sincronizado para a lixeira
+      for (const book of pendingDeletedBooks) {
+        await saveBook({ ...book, syncStatus: 'deleted_synced' });
       }
     } catch (error: any) {
       console.error('Error pushing books to Sheets', error);
@@ -110,11 +111,11 @@ export async function syncBooks(): Promise<void> {
     }
 
     // Se um livro estiver como 'synced' localmente mas não vier da folha, 
-    // significa que foi eliminado na folha diretamente, então eliminamos localmente.
+    // significa que foi eliminado na folha diretamente, então vai para a lixeira.
     const allLocalBooks = await getAllBooks();
     for (const localBook of allLocalBooks) {
       if (localBook.syncStatus === 'synced' && !remoteIds.has(String(localBook.id).trim())) {
-        await hardDeleteBook(localBook.id);
+        await saveBook({ ...localBook, syncStatus: 'deleted_synced' });
       }
     }
   } catch (error: any) {

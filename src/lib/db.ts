@@ -35,7 +35,7 @@ export async function getAllBooks(): Promise<LocalBook[]> {
   const tx = db.transaction('books', 'readonly');
   const store = tx.objectStore('books');
   const books = await store.getAll();
-  return books.filter(book => book.syncStatus !== 'deleted');
+  return books.filter(book => book.syncStatus !== 'deleted' && book.syncStatus !== 'deleted_synced');
 }
 
 export async function getPendingBooks(): Promise<LocalBook[]> {
@@ -61,14 +61,16 @@ export async function getDeletedBooks(): Promise<LocalBook[]> {
     const tx = db.transaction('books', 'readonly');
     const store = tx.objectStore('books');
     const index = store.index('by-syncStatus');
-    return await index.getAll('deleted');
+    const del1 = await index.getAll('deleted');
+    const del2 = await index.getAll('deleted_synced');
+    return [...del1, ...del2];
   } catch (e) {
     console.warn("Index by-syncStatus failed, falling back to manual filtering:", e);
     const db = await initDB();
     const tx = db.transaction('books', 'readonly');
     const store = tx.objectStore('books');
     const books = await store.getAll();
-    return books.filter(book => book.syncStatus === 'deleted');
+    return books.filter(book => book.syncStatus === 'deleted' || book.syncStatus === 'deleted_synced');
   }
 }
 

@@ -21,7 +21,7 @@ export interface Book {
   shelfLocation?: string;
 }
 
-export type SyncStatus = 'pending' | 'synced' | 'deleted';
+export type SyncStatus = 'pending' | 'synced' | 'deleted' | 'deleted_synced';
 
 export interface LocalBook extends Book {
   syncStatus: SyncStatus;
