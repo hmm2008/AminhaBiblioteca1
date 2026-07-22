@@ -4,6 +4,7 @@ import { searchBNP } from '../lib/syncService';
 import { v4 as uuidv4 } from 'uuid';
 import { ScanBarcode, Camera, Search, Loader2, Info } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useBooks } from '../BookContext';
 
 interface BookFormProps {
   book?: LocalBook | null;
@@ -12,10 +13,24 @@ interface BookFormProps {
 }
 
 export function BookForm({ book, onSave, onClose }: BookFormProps) {
+  const { themes } = useBooks();
   const [isSearching, setIsSearching] = useState(false);
   const [searchNotFound, setSearchNotFound] = useState(false);
   const [searchMode, setSearchMode] = useState<'title' | 'author' | 'publisher'>('title');
   const [searchValue, setSearchValue] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [coverUrlInput, setCoverUrlInput] = useState('');
+  
+  const handleCoverSearch = () => {
+    if (formData.isbn) {
+      const cleanIsbn = formData.isbn.replace(/[- ]/g, '');
+      window.open(`https://www.google.com/search?tbm=isch&q=isbn+${cleanIsbn}`, '_blank', 'noopener,noreferrer');
+    } else if (formData.title) {
+      window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(formData.title)}+livro+capa`, '_blank', 'noopener,noreferrer');
+    } else {
+      alert("Por favor, insira o ISBN ou Título primeiro para pesquisar a capa no Google Imagens.");
+    }
+  };
   
   const [formData, setFormData] = useState<Partial<LocalBook>>({
     title: '',
@@ -444,10 +459,9 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">TEMA / CATEGORIA</label>
             <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
               <option value="">Selecionar tema...</option>
-              <option value="Ficção">Ficção</option>
-              <option value="Economia/Gestão">Economia/Gestão</option>
-              <option value="Saúde e Nutrição">Saúde e Nutrição</option>
-              <option value="Desenvolvimento Pessoal">Desenvolvimento Pessoal</option>
+              {themes.map(theme => (
+                <option key={theme} value={theme}>{theme}</option>
+              ))}
             </select>
           </div>
 
@@ -455,11 +469,37 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             <div className="flex justify-between items-center mb-2">
               <label className="text-[10px] font-bold text-slate-500 tracking-wider">CAPA DO LIVRO</label>
               <div className="flex gap-3 text-xs text-[#1a5eb8]">
-                <button type="button" onClick={() => fileInputRef.current?.click()}>Colar imagem</button>
-                <button type="button">URL manual</button>
-                <button type="button">Pesquisar capas</button>
+                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => fileInputRef.current?.click()}>Colar imagem</button>
+                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => setShowUrlInput(!showUrlInput)}>URL manual</button>
+                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={handleCoverSearch}>Pesquisar capas</button>
               </div>
             </div>
+
+            {showUrlInput && (
+              <div className="flex gap-2 mb-3">
+                <input 
+                  type="url" 
+                  placeholder="https://exemplo.com/capa.jpg" 
+                  value={coverUrlInput}
+                  onChange={(e) => setCoverUrlInput(e.target.value)}
+                  className="flex-1 border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    if (coverUrlInput) {
+                      setFormData({...formData, coverImage: coverUrlInput});
+                      setCoverUrlInput('');
+                      setShowUrlInput(false);
+                    }
+                  }}
+                  className="bg-[#1a5eb8] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#154a93]"
+                >
+                  Carregar
+                </button>
+              </div>
+            )}
+
             <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
             {formData.coverImage ? (
                <div className="relative w-24 h-32 rounded border border-slate-200 overflow-hidden">

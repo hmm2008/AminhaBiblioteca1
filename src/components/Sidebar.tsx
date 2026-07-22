@@ -1,10 +1,10 @@
 import React from 'react';
-import { Home, Library, PlusCircle, Bookmark, Users, BarChart2, Archive, Settings, Trash2, LogOut, Lock, RefreshCw, Cloud, CloudOff } from 'lucide-react';
+import { Home, Library, PlusCircle, Bookmark, Users, BarChart2, Archive, Settings, Trash2, LogOut, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { useBooks } from '../BookContext';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'add';
-  setCurrentView: (view: 'dashboard' | 'add') => void;
+  currentView: 'dashboard' | 'add' | 'library';
+  setCurrentView: (view: 'dashboard' | 'add' | 'library') => void;
 }
 
 function timeSince(date: Date) {
@@ -50,13 +50,13 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
       <nav className="flex-1 py-4 overflow-y-auto">
         <ul className="space-y-1 px-3">
           {navItems.map((item) => {
-            const isActive = currentView === item.id || (currentView === 'dashboard' && item.id === 'dashboard') || (currentView === 'add' && item.id === 'add');
-            const isWired = item.id === 'dashboard' || item.id === 'add';
+            const isActive = currentView === item.id;
+            const isWired = item.id === 'dashboard' || item.id === 'add' || item.id === 'library';
             
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => isWired && setCurrentView(item.id as 'dashboard' | 'add')}
+                  onClick={() => isWired && setCurrentView(item.id as any)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive 
                       ? 'bg-white/20 text-white' 
@@ -95,10 +95,6 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
         <button className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-colors border border-blue-400/30">
           <LogOut className="w-4 h-4 opacity-80" />
           Exportar CSV
-        </button>
-        <button className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-colors border border-blue-400/30">
-          <Lock className="w-4 h-4 opacity-80" />
-          Configurar PIN
         </button>
         
         <div className="flex gap-4 px-4 py-2 text-xs text-blue-200 mt-2">
