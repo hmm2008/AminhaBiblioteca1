@@ -13,13 +13,15 @@ interface BookFormProps {
 }
 
 export function BookForm({ book, onSave, onClose }: BookFormProps) {
-  const { themes } = useBooks();
+  const { themes, addTheme } = useBooks();
   const [isSearching, setIsSearching] = useState(false);
   const [searchNotFound, setSearchNotFound] = useState(false);
   const [searchMode, setSearchMode] = useState<'title' | 'author' | 'publisher'>('title');
   const [searchValue, setSearchValue] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [coverUrlInput, setCoverUrlInput] = useState('');
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   
   const handleCoverSearch = () => {
     if (formData.isbn) {
@@ -457,11 +459,22 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">TEMA / CATEGORIA</label>
-            <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+            <select 
+              value={formData.category || ''} 
+              onChange={e => {
+                if (e.target.value === 'nova') {
+                  setIsAddingCategory(true);
+                } else {
+                  setFormData({...formData, category: e.target.value});
+                }
+              }} 
+              className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+            >
               <option value="">Selecionar tema...</option>
               {themes.map(theme => (
                 <option key={theme} value={theme}>{theme}</option>
               ))}
+              <option value="nova" className="font-bold text-[#1a5eb8]">+ Nova Categoria</option>
             </select>
           </div>
 
@@ -540,6 +553,23 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 <option value="Lido">Lido</option>
               </select>
             </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">AVALIAÇÃO</label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button 
+                    key={star} 
+                    type="button" 
+                    onClick={() => setFormData({...formData, rating: star})}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                      (formData.rating || 0) >= star ? 'text-amber-400 bg-amber-50' : 'text-slate-300 bg-slate-50 hover:bg-slate-100'
+                    }`}
+                  >
+                    <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </form>
       </div>
@@ -552,6 +582,54 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           Guardar Livro
         </button>
       </div>
+
+      {isAddingCategory && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">
+                Nova Categoria
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                Introduza o nome da nova categoria. Ela ficará disponível para futuras utilizações.
+              </p>
+              <input 
+                type="text"
+                autoFocus
+                value={newCategoryName}
+                onChange={e => setNewCategoryName(e.target.value)}
+                placeholder="Nome da categoria..."
+                className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+              />
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => {
+                  setIsAddingCategory(false);
+                  setNewCategoryName('');
+                }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  if (newCategoryName.trim()) {
+                    addTheme(newCategoryName.trim());
+                    setFormData({...formData, category: newCategoryName.trim()});
+                    setIsAddingCategory(false);
+                    setNewCategoryName('');
+                  }
+                }}
+                disabled={!newCategoryName.trim()}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[#1a5eb8] text-white hover:bg-[#154a93] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Gravar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

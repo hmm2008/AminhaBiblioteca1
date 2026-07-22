@@ -51,8 +51,6 @@ function getOrCreateBooksSheet(ss) {
   let sheet = ss.getSheetByName("Books");
   
   if (!sheet) {
-    // Se não houver uma folha "Books", vamos verificar se a primeira folha padrão (ex: "Folha1" ou "Sheet1")
-    // está vazia e usá-la/renomeá-la para evitar que o usuário veja uma folha vazia e ache que não funcionou.
     const sheets = ss.getSheets();
     if (sheets.length === 1 && sheets[0].getDataRange().getValues().join("").trim() === "") {
       sheet = sheets[0];
@@ -64,27 +62,36 @@ function getOrCreateBooksSheet(ss) {
   
   const expectedHeaders = ["id", "title", "author", "isbn", "category", "readStatus", "status", "rating", "notes", "dateAdded", "coverImage", "publisher", "publishedDate", "pageCount", "language", "description", "shelfLocation"];
 
-  // Garantir cabeçalhos se a folha estiver vazia
-  const data = sheet.getDataRange().getValues();
-  if (data.length === 1 && data[0].join("").trim() === "") {
+  const dataRange = sheet.getDataRange();
+  const data = dataRange.getValues();
+  
+  if (data.length === 0 || (data.length === 1 && data[0].join("").trim() === "")) {
     sheet.clear();
     sheet.appendRow(expectedHeaders);
     sheet.getRange(1, 1, 1, expectedHeaders.length).setFontWeight("bold");
     sheet.setFrozenRows(1);
-  } else if (data.length > 0) {
-    // Add missing headers to existing sheets
-    const headers = data[0];
+  } else {
+    // Trims spaces and also empty headers at the end
+    let headers = data[0];
+    while (headers.length > 0 && String(headers[headers.length - 1]).trim() === "") {
+      headers.pop();
+    }
+    
+    // Convert to trimmed strings for clean comparison
+    const cleanHeaders = headers.map(h => String(h).trim());
+    
     let headersUpdated = false;
     
-    // Rename 'genre' to 'category' if it exists
-    const genreIndex = headers.indexOf("genre");
+    const genreIndex = cleanHeaders.indexOf("genre");
     if (genreIndex !== -1) {
+      cleanHeaders[genreIndex] = "category";
       headers[genreIndex] = "category";
       sheet.getRange(1, genreIndex + 1).setValue("category");
     }
 
     expectedHeaders.forEach(header => {
-      if (headers.indexOf(header) === -1) {
+      if (cleanHeaders.indexOf(header) === -1) {
+        cleanHeaders.push(header);
         headers.push(header);
         sheet.getRange(1, headers.length).setValue(header);
         headersUpdated = true;
@@ -199,21 +206,32 @@ function handleRequest(e, method) {
 
       // Buscar os dados atualizados após eventuais eliminações
       const dataAfterDeletions = sheet.getDataRange().getValues();
-      // Ensure we have headers even if sheet was empty before
       if (dataAfterDeletions.length > 0) {
-        headers = dataAfterDeletions[0];
+        headers = dataAfterDeletions[0].map(h => String(h).trim());
+        while(headers.length > 0 && headers[headers.length - 1] === "") {
+          headers.pop();
+        }
       }
 
       const idMap = {};
       for (let i = 1; i < dataAfterDeletions.length; i++) {
         const rowId = dataAfterDeletions[i][0];
-        if (rowId) {
-          idMap[rowId] = i + 1;
+        if (rowId !== undefined && rowId !== null && String(rowId).trim() !== "") {
+          idMap[String(rowId).trim()] = i + 1;
         }
       }
 
       let inseridos = 0;
       let atualizados = 0;
+      
+      let lastDataRow = 0;
+      for (let i = dataAfterDeletions.length - 1; i >= 0; i--) {
+        if (dataAfterDeletions[i].join("").trim() !== "") {
+          lastDataRow = i + 1;
+          break;
+        }
+      }
+      if (lastDataRow === 0) lastDataRow = 1;
 
       if (Array.isArray(data.books)) {
         data.books.forEach(book => {
@@ -224,15 +242,18 @@ function handleRequest(e, method) {
             if (header === 'readStatus' && !book[header]) return 'Não Lido';
             // Handle legacy genre
             if (header === 'category' && book['genre'] && !book['category']) return book['genre'];
-            return book[header] !== undefined ? book[header] : "";
+            return book[header] !== undefined && book[header] !== null ? book[header] : "";
           });
 
-          if (idMap[book.id]) {
-            sheet.getRange(idMap[book.id], 1, 1, rowData.length).setValues([rowData]);
+          const bookIdStr = String(book.id).trim();
+
+          if (idMap[bookIdStr]) {
+            sheet.getRange(idMap[bookIdStr], 1, 1, rowData.length).setValues([rowData]);
             atualizados++;
           } else {
-            sheet.appendRow(rowData);
-            idMap[book.id] = sheet.getLastRow();
+            lastDataRow++;
+            sheet.getRange(lastDataRow, 1, 1, rowData.length).setValues([rowData]);
+            idMap[bookIdStr] = lastDataRow;
             inseridos++;
           }
         });

@@ -13,6 +13,7 @@ export function LibraryView({ onAddBook, onEditBook }: LibraryViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos os temas');
   const [sortBy, setSortBy] = useState('Título');
+  const [bookToDelete, setBookToDelete] = useState<string | null>(null);
 
   const categories = ['Todos os temas', ...themes];
 
@@ -94,7 +95,7 @@ export function LibraryView({ onAddBook, onEditBook }: LibraryViewProps) {
                 key={book.id} 
                 book={book} 
                 onEdit={() => onEditBook(book.id)} 
-                onDelete={() => removeBook(book.id)} 
+                onDelete={() => setBookToDelete(book.id)} 
               />
             ))}
             {filteredBooks.length === 0 && (
@@ -107,6 +108,39 @@ export function LibraryView({ onAddBook, onEditBook }: LibraryViewProps) {
           
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {bookToDelete && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 mb-4 text-red-600 mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
+                Apagar Registo
+              </h3>
+              <p className="text-sm text-slate-500 text-center">
+                Tem a certeza que deseja apagar este livro? Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => setBookToDelete(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => { removeBook(bookToDelete); setBookToDelete(null); }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Apagar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
