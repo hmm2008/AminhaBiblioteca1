@@ -70,7 +70,7 @@ export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: Sideba
         <ul className="space-y-1 px-3">
           {defaultNavItems.map((item) => {
             const isActive = currentView === item.id;
-            const isWired = ['dashboard', 'add', 'library', 'themes', 'borrowed', 'reports', 'settings'].includes(item.id);
+            const isWired = ['dashboard', 'add', 'library', 'themes', 'borrowed', 'reports', 'settings', 'trash'].includes(item.id);
             const displayLabel = settings.navLabels?.[item.id] || item.defaultLabel;
             
             return (

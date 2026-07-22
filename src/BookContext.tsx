@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { LocalBook, AppSettings, DEFAULT_SETTINGS, BackupRecord } from './types';
-import { getAllBooks, saveBook, deleteBook as dbDeleteBook } from './lib/db';
+import { getAllBooks, saveBook, deleteBook as dbDeleteBook, getDeletedBooks, hardDeleteBook } from './lib/db';
 import { syncBooks } from './lib/syncService';
 
 const DEFAULT_THEMES = [
@@ -35,12 +35,16 @@ interface BookContextType {
   addBackupRecord: (type: 'Automático' | 'Manual') => void;
   exportBackup: () => void;
   importBackup: (jsonString: string) => Promise<boolean>;
+  trashedBooks: LocalBook[];
+  hardRemoveBook: (id: string) => Promise<void>;
+  restoreBook: (book: LocalBook) => Promise<void>;
 }
 
 const BookContext = createContext<BookContextType | undefined>(undefined);
 
 export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [books, setBooks] = useState<LocalBook[]>([]);
+  const [trashedBooks, setTrashedBooks] = useState<LocalBook[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -192,6 +196,10 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Sort by date added desc
       allBooks.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
       setBooks(allBooks);
+
+      const deletedBooks = await getDeletedBooks();
+      deletedBooks.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
+      setTrashedBooks(deletedBooks);
     } catch (e) {
       console.error('Failed to load books from DB', e);
     }
@@ -221,6 +229,22 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const removeBook = async (id: string) => {
     await dbDeleteBook(id);
+    await loadBooks();
+    if (navigator.onLine) {
+      sync();
+    }
+  };
+
+  const hardRemoveBook = async (id: string) => {
+    await hardDeleteBook(id);
+    await loadBooks();
+    if (navigator.onLine) {
+      sync();
+    }
+  };
+
+  const restoreBook = async (book: LocalBook) => {
+    await saveBook({ ...book, syncStatus: 'pending' });
     await loadBooks();
     if (navigator.onLine) {
       sync();
@@ -262,6 +286,9 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addBackupRecord,
         exportBackup,
         importBackup,
+        trashedBooks,
+        hardRemoveBook,
+        restoreBook,
       }}
     >
       {children}

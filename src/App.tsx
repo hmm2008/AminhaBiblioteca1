@@ -13,6 +13,7 @@ import { ThemesView } from './components/ThemesView';
 import { BorrowedView } from './components/BorrowedView';
 import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
+import { TrashView } from './components/TrashView';
 import { BookForm } from './components/BookForm';
 import { useBooks } from './BookContext';
 import { LocalBook } from './types';
@@ -78,6 +79,7 @@ function AppContent() {
         {currentView === 'borrowed' && <BorrowedView />}
         {currentView === 'reports' && <ReportsView />}
         {currentView === 'settings' && <SettingsView />}
+        {currentView === 'trash' && <TrashView />}
         {currentView === 'add' && (
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
              <BookForm 

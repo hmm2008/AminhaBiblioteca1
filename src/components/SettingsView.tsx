@@ -21,6 +21,8 @@ export function SettingsView() {
   const [formData, setFormData] = useState<AppSettings>(settings);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSyncingDrive, setIsSyncingDrive] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -30,17 +32,17 @@ export function SettingsView() {
     }, 3000);
   };
 
-  const handleSave = () => {
+  const confirmSave = () => {
     updateSettings(formData);
+    setShowSaveModal(false);
     showToast("Configurações guardadas com sucesso!");
   };
 
-  const handleReset = () => {
-    if (window.confirm("Tem a certeza que deseja repor as configurações de fábrica?")) {
-      resetSettings();
-      setFormData(DEFAULT_SETTINGS);
-      showToast("Configurações repostas com sucesso!");
-    }
+  const confirmReset = () => {
+    resetSettings();
+    setFormData(DEFAULT_SETTINGS);
+    setShowResetModal(false);
+    showToast("Configurações repostas com sucesso!");
   };
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,19 +110,19 @@ export function SettingsView() {
               <p className="text-slate-500 mt-0.5 text-sm">Personaliza a tua biblioteca.</p>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-3">
               <button
-                onClick={handleReset}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 flex items-center gap-2 transition-colors shadow-sm"
+                onClick={() => setShowResetModal(true)}
+                className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-900 active:bg-slate-200 flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 <RotateCcw className="w-4 h-4 text-slate-500" />
                 Repor Pré-Configurações
               </button>
               
               <button
-                onClick={handleSave}
+                onClick={() => setShowSaveModal(true)}
                 style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
-                className="px-5 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 flex items-center gap-2 transition-opacity shadow-sm"
+                className="px-5 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-85 hover:shadow-md active:opacity-100 flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 <Save className="w-4 h-4" />
                 Guardar
@@ -466,6 +468,73 @@ export function SettingsView() {
 
         </div>
       </div>
+
+      {/* Save Confirmation Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4 text-[#1a5eb8] mx-auto">
+                <Save className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
+                Guardar Alterações
+              </h3>
+              <p className="text-sm text-slate-500 text-center">
+                Pretende guardar as novas configurações da sua biblioteca?
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => setShowSaveModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmSave}
+                style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-50 mb-4 text-orange-600 mx-auto">
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
+                Repor Configurações
+              </h3>
+              <p className="text-sm text-slate-500 text-center">
+                Tem a certeza que deseja repor as configurações de fábrica? Irá perder todas as personalizações de forma irreversível.
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => setShowResetModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmReset}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+              >
+                Repor
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

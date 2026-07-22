@@ -35,6 +35,7 @@ export interface NavLabels {
   borrowed: string;
   reports: string;
   settings: string;
+  trash: string;
   [key: string]: string;
 }
 
@@ -66,6 +67,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     borrowed: 'Emprestados',
     reports: 'Relatórios',
     settings: 'Configurações',
+    trash: 'Lixeira',
   },
   colorTheme: 'blue',
   fontFamily: 'inter',

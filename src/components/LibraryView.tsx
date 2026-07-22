@@ -10,7 +10,7 @@ interface LibraryViewProps {
 }
 
 export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryViewProps) {
-  const { books, removeBook, themes } = useBooks();
+  const { books, removeBook, hardRemoveBook, themes } = useBooks();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory || 'Todos os temas');
   const [sortBy, setSortBy] = useState('Título');
@@ -118,31 +118,37 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
 
       {/* Delete Confirmation Modal */}
       {bookToDelete && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6">
               <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 mb-4 text-red-600 mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Apagar Registo
+                Eliminar Livro
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Tem a certeza que deseja apagar este livro? Esta ação não pode ser desfeita.
+                Pretende mover este livro para a lixeira ou eliminá-lo definitivamente?
               </p>
             </div>
-            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+            <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3 bg-slate-50">
               <button 
                 onClick={() => setBookToDelete(null)}
-                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors order-3 sm:order-1"
               >
                 Cancelar
               </button>
               <button 
                 onClick={() => { removeBook(bookToDelete); setBookToDelete(null); }}
-                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors order-2"
               >
-                Apagar
+                Colocar no Lixo
+              </button>
+              <button 
+                onClick={() => { hardRemoveBook(bookToDelete); setBookToDelete(null); }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors order-1 sm:order-3"
+              >
+                Eliminar Definitivamente
               </button>
             </div>
           </div>
