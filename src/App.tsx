@@ -57,7 +57,15 @@ function AppContent() {
         }} 
       />
       <main className="flex-1 overflow-hidden flex flex-col relative">
-        {currentView === 'dashboard' && <Dashboard onAddBook={() => setCurrentView('add')} />}
+        {currentView === 'dashboard' && (
+          <Dashboard 
+            onAddBook={() => setCurrentView('add')} 
+            onViewLibrary={() => {
+              setInitialCategory('Todos os temas');
+              setCurrentView('library');
+            }} 
+          />
+        )}
         {currentView === 'library' && <LibraryView onAddBook={() => setCurrentView('add')} onEditBook={handleEditBook} initialCategory={initialCategory} />}
         {currentView === 'themes' && <ThemesView onNavigateToLibrary={(theme) => {
           setInitialCategory(theme);

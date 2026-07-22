@@ -5,9 +5,10 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 
 interface DashboardProps {
   onAddBook: () => void;
+  onViewLibrary?: () => void;
 }
 
-export function Dashboard({ onAddBook }: DashboardProps) {
+export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
   const { books } = useBooks();
 
   // Stats calculations
@@ -154,7 +155,7 @@ export function Dashboard({ onAddBook }: DashboardProps) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-slate-800">A ler atualmente</h3>
-              <button className="text-sm text-[#1a5eb8] font-medium hover:underline">Ver todos →</button>
+              <button onClick={onViewLibrary} className="text-sm text-[#1a5eb8] font-medium hover:underline">Ver todos →</button>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -190,7 +191,7 @@ export function Dashboard({ onAddBook }: DashboardProps) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-slate-800">Adicionados Recentemente</h3>
-              <button className="text-sm text-[#1a5eb8] font-medium hover:underline">Ver todos →</button>
+              <button onClick={onViewLibrary} className="text-sm text-[#1a5eb8] font-medium hover:underline">Ver todos →</button>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
