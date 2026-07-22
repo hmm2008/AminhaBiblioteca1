@@ -42,7 +42,7 @@ export function TrashView() {
                       <th className="px-6 py-4">{t('common.author')}</th>
                       <th className="px-6 py-4">{t('common.category')}</th>
                       <th className="px-6 py-4">{t('bookForm.readStatus')}</th>
-                      <th className="px-6 py-4 text-right">Ações</th>
+                      <th className="px-6 py-4 text-right">{t('trash.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

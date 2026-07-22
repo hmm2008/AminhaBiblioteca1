@@ -105,12 +105,12 @@ export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: Sideba
           >
             <span className="flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              Sincronizar
+              {t('sidebar.sync')}
             </span>
             {pendingCount > 0 ? (
               <CloudOff className="w-4 h-4 text-amber-300" title={`${pendingCount} pendentes`} />
             ) : (
-              <Cloud className="w-4 h-4 text-emerald-300" title={`Sincronizado há ${lastSync ? timeSince(lastSync) : 'pouco'}`} />
+              <Cloud className="w-4 h-4 text-emerald-300" title={lastSync ? t('sidebar.syncAgo').replace('{time}', timeSince(lastSync)) : t('sidebar.syncJustNow')} />
             )}
           </button>
           {syncError && <div className="text-[10px] text-red-200 mt-1 px-1">{t('sidebar.syncError')}</div>}

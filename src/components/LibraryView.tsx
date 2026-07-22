@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useBooks } from '../BookContext';
-import { Search, Plus, Book, Users, Pencil, Trash2, Filter } from 'lucide-react';
+import { Search, Book, Users, Pencil, Trash2, Filter } from 'lucide-react';
 import { LocalBook } from '../types';
 import { useTranslation } from '../i18n/LanguageContext';
 
@@ -12,7 +12,7 @@ interface LibraryViewProps {
 
 export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryViewProps) {
   const { books, removeBook, hardRemoveBook, themes } = useBooks();
-  const { t } = useTranslation();
+  const { t, translateTheme } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory || 'Todos os temas');
   const [sortBy, setSortBy] = useState('Título');
@@ -44,7 +44,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-50/50">
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
         <div className="max-w-7xl mx-auto space-y-6">
           
           {/* Header */}
@@ -55,9 +55,8 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
             </div>
             <button 
               onClick={onAddBook}
-              className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
+              className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0 shadow-sm"
             >
-              <Plus className="w-4 h-4" />
               {t('library.addBook')}
             </button>
           </div>
@@ -82,7 +81,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
                 className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#1a5eb8] shadow-sm appearance-none min-w-[200px]"
               >
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat === 'Todos os temas' ? t('library.allThemes') : cat}</option>
+                  <option key={cat} value={cat}>{cat === 'Todos os temas' ? t('library.allThemes') : translateTheme(cat)}</option>
                 ))}
               </select>
 
@@ -161,7 +160,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
 }
 
 const BookCard: React.FC<{ book: LocalBook, onEdit: () => void, onDelete: () => any }> = ({ book, onEdit, onDelete }) => {
-  const { t } = useTranslation();
+  const { t, translateTheme } = useTranslation();
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col relative h-full">
       {/* Action Buttons Overlay */}
@@ -198,7 +197,7 @@ const BookCard: React.FC<{ book: LocalBook, onEdit: () => void, onDelete: () => 
         </p>
         <div className="mt-auto">
           <span className="inline-block bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-1 rounded-full truncate max-w-full">
-            {book.category || t('common.category')}
+            {translateTheme(book.category || '') || t('common.category')}
           </span>
         </div>
       </div>

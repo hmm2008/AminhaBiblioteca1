@@ -5,7 +5,7 @@ import { useTranslation } from '../i18n/LanguageContext';
 
 export function ReportsView() {
   const { books, themes } = useBooks();
-  const { t } = useTranslation();
+  const { t, translateTheme } = useTranslation();
   const [exportFilter, setExportFilter] = useState<'todos' | 'lidos' | 'emprestados' | 'extraviados' | 'nao-lidos'>('todos');
   const [showPdfPreview, setShowPdfPreview] = useState(false);
 
@@ -35,7 +35,7 @@ export function ReportsView() {
   });
 
   const executeExportCSV = () => {
-    const headers = ['Título', 'Autor', 'Tema', 'Estado', 'Estado de leitura', 'Ano', 'ISBN'];
+    const headers = [t('library.title'), t('library.author'), t('common.category'), t('reports.statusCol'), t('bookForm.readStatus'), t('bookForm.publishYear'), 'ISBN'];
     const csvContent = [
       headers.join(','),
       ...filteredBooks.map(b => [
@@ -80,7 +80,7 @@ export function ReportsView() {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-50/50">
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
         <div className="max-w-6xl mx-auto space-y-8">
           
           <div className="print:hidden">
@@ -154,18 +154,18 @@ export function ReportsView() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <button onClick={handleExportCSV} className="text-left p-4 rounded-xl border border-green-200 bg-green-50/50 hover:bg-green-50 transition-colors group">
                 <Download className="w-5 h-5 text-green-600 mb-3" />
-                <h4 className="font-bold text-green-900 text-sm mb-1">Exportar CSV</h4>
-                <p className="text-xs text-green-700/70">Abre no Excel, Sheets...</p>
+                <h4 className="font-bold text-green-900 text-sm mb-1">{t('reports.exportCsv')}</h4>
+                <p className="text-xs text-green-700/70">{t('reports.openInExcel')}</p>
               </button>
               <button onClick={handleExportJSON} className="text-left p-4 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors group">
                 <FileJson className="w-5 h-5 text-blue-600 mb-3" />
-                <h4 className="font-bold text-blue-900 text-sm mb-1">Exportar JSON</h4>
-                <p className="text-xs text-blue-700/70">Formato estruturado para programadores</p>
+                <h4 className="font-bold text-blue-900 text-sm mb-1">{t('reports.exportJson')}</h4>
+                <p className="text-xs text-blue-700/70">{t('reports.structuredFormat')}</p>
               </button>
               <button onClick={handleExportPDF} className="text-left p-4 rounded-xl border border-red-200 bg-red-50/50 hover:bg-red-50 transition-colors group">
                 <FileText className="w-5 h-5 text-red-600 mb-3" />
-                <h4 className="font-bold text-red-900 text-sm mb-1">Exportar PDF</h4>
-                <p className="text-xs text-red-700/70">Guarda como PDF (escolhe 'Guardar como PDF' na impressão)</p>
+                <h4 className="font-bold text-red-900 text-sm mb-1">{t('reports.exportPdf')}</h4>
+                <p className="text-xs text-red-700/70">{t('reports.pdfInstructions')}</p>
               </button>
             </div>
           </div>
@@ -191,7 +191,7 @@ export function ReportsView() {
                       <tr key={book.id} className="hover:bg-slate-50/50">
                         <td className="px-6 py-4 font-medium text-slate-800 max-w-[200px] truncate" title={book.title}>{book.title}</td>
                         <td className="px-6 py-4 text-slate-600 truncate max-w-[150px]">{book.author}</td>
-                        <td className="px-6 py-4 text-slate-600">{book.category}</td>
+                        <td className="px-6 py-4 text-slate-600">{translateTheme(book.category || "")}</td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-2 py-1 rounded-md text-xs font-medium ${
                             book.status === 'Emprestado' ? 'bg-amber-50 text-amber-700' :
@@ -234,7 +234,7 @@ export function ReportsView() {
             <div className="flex items-center justify-between p-4 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-red-600" />
-                <h3 className="text-lg font-bold text-slate-800">Pré-visualização do Relatório em PDF</h3>
+                <h3 className="text-lg font-bold text-slate-800">{t('reports.pdfPreview')}</h3>
               </div>
               <button 
                 onClick={() => setShowPdfPreview(false)}
@@ -246,19 +246,19 @@ export function ReportsView() {
             
             <div className="flex-1 overflow-y-auto p-8 bg-slate-100">
               <div className="bg-white p-8 shadow-sm max-w-[21cm] mx-auto min-h-[29.7cm] text-black">
-                <h1 className="text-2xl font-bold mb-6 text-center border-b pb-4">Relatório da Biblioteca</h1>
+                <h1 className="text-2xl font-bold mb-6 text-center border-b pb-4">{t('reports.libraryReport')}</h1>
                 <div className="flex justify-between text-sm mb-8 text-slate-600">
-                  <span>Total de livros no relatório: <strong>{filteredBooks.length}</strong></span>
+                  <span>{t('reports.totalReportBooks')}: <strong>{filteredBooks.length}</strong></span>
                   <span>Data: {new Date().toLocaleDateString()}</span>
                 </div>
                 
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-100 text-xs font-semibold text-slate-700 uppercase border-b border-slate-300">
                     <tr>
-                      <th className="px-4 py-3">Título</th>
-                      <th className="px-4 py-3">Autor</th>
-                      <th className="px-4 py-3">Tema</th>
-                      <th className="px-4 py-3">Estado</th>
+                      <th className="px-4 py-3">{t('library.title')}</th>
+                      <th className="px-4 py-3">{t('library.author')}</th>
+                      <th className="px-4 py-3">{t('common.category')}</th>
+                      <th className="px-4 py-3">{t('reports.statusCol')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
@@ -266,13 +266,13 @@ export function ReportsView() {
                       <tr key={book.id}>
                         <td className="px-4 py-3 font-medium max-w-[250px] truncate">{book.title}</td>
                         <td className="px-4 py-3 max-w-[150px] truncate">{book.author}</td>
-                        <td className="px-4 py-3">{book.category}</td>
-                        <td className="px-4 py-3">{book.status || 'Disponível'}</td>
+                        <td className="px-4 py-3">{translateTheme(book.category || "")}</td>
+                        <td className="px-4 py-3">{book.status === 'Emprestado' ? t('common.bookStatus.borrowed') : book.status === 'Extraviado' ? t('common.bookStatus.lost') : t('common.bookStatus.available')}</td>
                       </tr>
                     ))}
                     {filteredBooks.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-slate-500">Nenhum livro para mostrar.</td>
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-500">{t('reports.noMatches')}</td>
                       </tr>
                     )}
                   </tbody>
@@ -313,10 +313,10 @@ export function ReportsView() {
                 <Download className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Exportar para {showExportConfirm === 'csv' ? 'CSV' : 'JSON'}
+                {t('reports.exportTo')} {showExportConfirm === 'csv' ? 'CSV' : 'JSON'}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Tem a certeza que deseja gravar a exportação com {filteredBooks.length} livro(s)?
+                {t('reports.exportConfirm', { count: filteredBooks.length })}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">

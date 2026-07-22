@@ -15,7 +15,7 @@ interface BookFormProps {
 
 export function BookForm({ book, onSave, onClose }: BookFormProps) {
   const { themes, addTheme } = useBooks();
-  const { t } = useTranslation();
+  const { t, translateTheme } = useTranslation();
   const [isSearching, setIsSearching] = useState(false);
   const [searchNotFound, setSearchNotFound] = useState(false);
   const [searchMode, setSearchMode] = useState<'title' | 'author' | 'publisher'>('title');
@@ -32,7 +32,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
     } else if (formData.title) {
       window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(formData.title)}+livro+capa`, '_blank', 'noopener,noreferrer');
     } else {
-      alert("Por favor, insira o ISBN ou Título primeiro para pesquisar a capa no Google Imagens.");
+      alert(t('bookForm.searchCoverAlert'));
     }
   };
   
@@ -327,7 +327,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <h3 className="font-semibold text-slate-800 mb-4">Pesquisa Online</h3>
+        <h3 className="font-semibold text-slate-800 mb-4">{t('bookForm.onlineSearch')}</h3>
         <div className="flex gap-2 mb-3">
           {['title', 'author', 'publisher'].map((mode) => (
             <button
@@ -392,15 +392,15 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
 
         <button className="w-full py-4 rounded-xl border-2 border-dashed border-[#8bb4eb] text-[#1a5eb8] bg-[#8bb4eb]/10 hover:bg-[#8bb4eb]/20 text-sm font-medium flex items-center justify-center gap-2 transition-colors">
           <ScanBarcode className="w-5 h-5" />
-          Fotografar ou carregar imagem do código de barras
+          {t('bookForm.scanBarcode')}
         </button>
 
         {searchNotFound && (
           <div className="bg-blue-50 border border-blue-100 text-blue-700 p-4 rounded-lg flex gap-3 text-sm">
             <Info className="w-5 h-5 shrink-0" />
             <div>
-              <p className="font-medium">Livro não encontrado online.</p>
-              <p>Podes preencher os dados manualmente abaixo.</p>
+              <p className="font-medium">{t('bookForm.bookNotFound')}</p>
+              <p>{t('bookForm.fillManuallySub')}</p>
             </div>
           </div>
         )}
@@ -409,7 +409,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
         <div className="mb-6">
           <h3 className="font-semibold text-slate-800">{t('bookForm.mainDetails')}</h3>
-          <p className="text-sm text-slate-500">Preenche os campos manualmente.</p>
+          <p className="text-sm text-slate-500">{t('bookForm.fillManually')}</p>
         </div>
 
         <form id="book-form" onSubmit={handleSubmit} className="space-y-4">
@@ -444,18 +444,18 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">IDIOMA</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.languageLabel')}</label>
             <select value={formData.language || ''} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
-              <option value="">Selecione o idioma...</option>
-              <option value="pt">Português</option>
-              <option value="en">Inglês</option>
+              <option value="">{t('bookForm.languagePlaceholder')}</option>
+              <option value="pt">{t('bookForm.langPt')}</option>
+              <option value="en">{t('bookForm.langEn')}</option>
               <option value="es">Espanhol</option>
-              <option value="fr">Francês</option>
+              <option value="fr">{t('bookForm.langFr')}</option>
             </select>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">LOCALIZAÇÃO NA PRATELEIRA</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.shelfLocation')}</label>
             <input type="text" value={formData.shelfLocation || ''} onChange={e => setFormData({...formData, shelfLocation: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
@@ -472,21 +472,21 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
               }} 
               className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
             >
-              <option value="">Selecionar tema...</option>
+              <option value="">{t('bookForm.selectTheme')}</option>
               {themes.map(theme => (
-                <option key={theme} value={theme}>{theme}</option>
+                <option key={theme} value={theme}>{translateTheme(theme)}</option>
               ))}
-              <option value="nova" className="font-bold text-[#1a5eb8]">+ Nova Categoria</option>
+              <option value="nova" className="font-bold text-[#1a5eb8]">{t('bookForm.newCategory')}</option>
             </select>
           </div>
 
           <div className="space-y-1.5 pt-2">
             <div className="flex justify-between items-center mb-2">
-              <label className="text-[10px] font-bold text-slate-500 tracking-wider">CAPA DO LIVRO</label>
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.bookCover')}</label>
               <div className="flex gap-3 text-xs text-[#1a5eb8]">
-                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => fileInputRef.current?.click()}>Colar imagem</button>
-                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => setShowUrlInput(!showUrlInput)}>URL manual</button>
-                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={handleCoverSearch}>Pesquisar capas</button>
+                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => fileInputRef.current?.click()}>{t('bookForm.pasteImage')}</button>
+                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => setShowUrlInput(!showUrlInput)}>{t('bookForm.manualUrl')}</button>
+                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={handleCoverSearch}>{t('bookForm.searchCovers')}</button>
               </div>
             </div>
 
@@ -523,7 +523,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                </div>
             ) : (
               <div className="w-full h-32 border border-slate-200 rounded-lg flex items-center justify-center bg-slate-50 text-slate-400">
-                Sem capa
+                {t('bookForm.noCover')}
               </div>
             )}
           </div>
@@ -534,7 +534,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">NOTAS PESSOAIS</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.personalNotes')}</label>
             <textarea value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 resize-none" />
           </div>
 
@@ -593,7 +593,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 Nova Categoria
               </h3>
               <p className="text-sm text-slate-500 mb-4">
-                Introduza o nome da nova categoria. Ela ficará disponível para futuras utilizações.
+                {t('bookForm.newCategoryPrompt')}
               </p>
               <input 
                 type="text"

@@ -5,6 +5,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string, params?: Record<string, any>) => string;
+  translateTheme: (theme: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -50,8 +51,13 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return key;
   };
 
+  const translateTheme = (theme: string) => {
+    const translated = t(`themes.list.${theme}`);
+    return translated !== `themes.list.${theme}` ? translated : theme;
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, translateTheme }}>
       {children}
     </LanguageContext.Provider>
   );

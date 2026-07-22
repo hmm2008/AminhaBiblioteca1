@@ -1,6 +1,6 @@
 import React from 'react';
 import { useBooks } from '../BookContext';
-import { Plus, Search, Library, CheckCircle, Users, AlertTriangle, BookOpen, Book } from 'lucide-react';
+import { Search, Library, CheckCircle, Users, AlertTriangle, BookOpen, Book } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTranslation } from '../i18n/LanguageContext';
 
@@ -11,7 +11,7 @@ interface DashboardProps {
 
 export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
   const { books, settings } = useBooks();
-  const { t } = useTranslation();
+  const { t, translateTheme } = useTranslation();
 
   // Stats calculations
   const totalBooks = books.length;
@@ -30,7 +30,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
 
   // Categories popular
   const categoryCounts = books.reduce((acc, book) => {
-    const cat = book.category || 'Sem Categoria';
+    const cat = book.category || t('dashboard.noCategory');
     acc[cat] = (acc[cat] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -47,24 +47,15 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-50/50">
-      <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
         <div className="max-w-6xl mx-auto space-y-8">
           
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                {t('dashboard.welcome')}
-              </h2>
-              <p className="text-slate-500 mt-1">{t('dashboard.subtitle')}</p>
-            </div>
-            <button 
-              onClick={onAddBook}
-              className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              {t('dashboard.addBook')}
-            </button>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              {t('dashboard.welcome')}
+            </h2>
+            <p className="text-slate-500 mt-1">{t('dashboard.subtitle')}</p>
           </div>
 
           {/* Search */}
@@ -117,7 +108,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
                 {popularCategories.slice(0, 5).map((cat, i) => (
                   <div key={i}>
                     <div className="flex justify-between text-xs font-medium text-slate-700 mb-2">
-                      <span>{cat.name}</span>
+                      <span>{translateTheme(cat.name)}</span>
                       <span className="text-slate-500">{cat.count} · {cat.percent}%</span>
                     </div>
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -145,7 +136,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
             <div className="flex flex-wrap gap-3">
               {popularCategories.map((cat, i) => (
                 <div key={i} className="bg-white border border-slate-200 rounded-full px-4 py-2 text-sm font-medium text-slate-700 flex items-center gap-2 shadow-sm">
-                  {cat.name}
+                  {translateTheme(cat.name)}
                   <span className="bg-blue-50 text-blue-700 text-xs py-0.5 px-2 rounded-full font-bold">{cat.count}</span>
                 </div>
               ))}

@@ -37,14 +37,14 @@ export function SettingsView() {
   const confirmSave = () => {
     updateSettings(formData);
     setShowSaveModal(false);
-    showToast("Configurações guardadas com sucesso!");
+    showToast(t('settings.saveSuccess'));
   };
 
   const confirmReset = () => {
     resetSettings();
     setFormData(DEFAULT_SETTINGS);
     setShowResetModal(false);
-    showToast("Configurações repostas com sucesso!");
+    showToast(t('settings.resetSuccess'));
   };
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,9 +57,9 @@ export function SettingsView() {
       if (content) {
         const success = await importBackup(content);
         if (success) {
-          showToast("Biblioteca restaurada com sucesso!");
+          showToast(t('settings.importSuccess'));
         } else {
-          alert("O ficheiro selecionado é inválido ou está corrompido.");
+          alert(t('settings.invalidFile'));
         }
       }
     };
@@ -77,19 +77,19 @@ export function SettingsView() {
   };
 
   const colorsList = [
-    { id: 'blue', label: 'Azul (Padrão)', hex: '#1a5eb8' },
-    { id: 'green', label: 'Verde', hex: '#059669' },
-    { id: 'purple', label: 'Roxo', hex: '#7c3aed' },
-    { id: 'red', label: 'Vermelho', hex: '#dc2626' },
-    { id: 'orange', label: 'Laranja', hex: '#ea580c' },
-    { id: 'teal', label: 'Teal', hex: '#0891b2' },
+    { id: 'blue', label: t('settings.colors.blue'), hex: '#1a5eb8' },
+    { id: 'green', label: t('settings.colors.green'), hex: '#059669' },
+    { id: 'purple', label: t('settings.colors.purple'), hex: '#7c3aed' },
+    { id: 'red', label: t('settings.colors.red'), hex: '#dc2626' },
+    { id: 'orange', label: t('settings.colors.orange'), hex: '#ea580c' },
+    { id: 'teal', label: t('settings.colors.teal'), hex: '#0891b2' },
   ];
 
   const fontOptions = [
-    { id: 'inter', name: 'Inter (Padrão)', styleClass: 'font-sans' },
-    { id: 'georgia', name: 'Georgia (Serifada)', styleClass: 'font-serif' },
-    { id: 'mono', name: 'Mono', styleClass: 'font-mono' },
-    { id: 'nunito', name: 'Nunito (Arredondada)', styleClass: 'font-sans' },
+    { id: 'inter', name: t('settings.fonts.inter'), styleClass: 'font-sans' },
+    { id: 'georgia', name: t('settings.fonts.georgia'), styleClass: 'font-serif' },
+    { id: 'mono', name: t('settings.fonts.mono'), styleClass: 'font-mono' },
+    { id: 'nunito', name: t('settings.fonts.nunito'), styleClass: 'font-sans' },
   ];
 
   return (
@@ -136,14 +136,12 @@ export function SettingsView() {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <BookOpen className="w-5 h-5 text-[#1a5eb8]" />
-              <h3>Identidade da Biblioteca</h3>
+              <h3>{t('settings.identity')}</h3>
             </div>
 
             <div className="space-y-4 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Nome da Biblioteca
-                </label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('settings.libraryName')}</label>
                 <input
                   type="text"
                   value={formData.libraryName}
@@ -153,9 +151,7 @@ export function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Mensagem de Boas-Vindas
-                </label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t('settings.welcomeMsg')}</label>
                 <input
                   type="text"
                   value={formData.subTitle}
@@ -181,7 +177,7 @@ export function SettingsView() {
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <MenuIcon className="w-5 h-5 text-[#1a5eb8]" />
               <div>
-                <h3>Menu de Navegação</h3>
+                <h3>{t('settings.navMenu')}</h3>
                 <p className="text-xs font-normal text-slate-400 mt-0.5">
                   Personaliza os nomes dos itens do menu lateral.
                 </p>
@@ -190,7 +186,7 @@ export function SettingsView() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Início</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('nav.dashboard')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.dashboard}
@@ -203,7 +199,7 @@ export function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Biblioteca</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('nav.library')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.library}
@@ -216,7 +212,7 @@ export function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Adicionar Livro</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('nav.addBook')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.add}
@@ -229,7 +225,7 @@ export function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Temas</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('nav.themes')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.themes}
@@ -242,7 +238,7 @@ export function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Emprestados</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('nav.borrowed')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.borrowed}
@@ -255,7 +251,7 @@ export function SettingsView() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Relatórios</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('nav.reports')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.reports}
@@ -268,7 +264,7 @@ export function SettingsView() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Configurações</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('settings.title')}</label>
                 <input
                   type="text"
                   value={formData.navLabels.settings}
@@ -286,7 +282,7 @@ export function SettingsView() {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <Palette className="w-5 h-5 text-[#1a5eb8]" />
-              <h3>Tema de Cores</h3>
+              <h3>{t('settings.colorTheme')}</h3>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 pt-1">
@@ -319,7 +315,7 @@ export function SettingsView() {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <Type className="w-5 h-5 text-[#1a5eb8]" />
-              <h3>Letra (Fonte)</h3>
+              <h3>{t('settings.font')}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
@@ -350,9 +346,9 @@ export function SettingsView() {
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <Download className="w-5 h-5 text-[#1a5eb8]" />
               <div>
-                <h3>Exportar Backup</h3>
+                <h3>{t('settings.exportBackup')}</h3>
                 <p className="text-xs font-normal text-slate-400 mt-0.5">
-                  Descarrega um ficheiro com toda a tua biblioteca.
+                  {t('settings.exportDesc')}
                 </p>
               </div>
             </div>
@@ -362,9 +358,7 @@ export function SettingsView() {
                 onClick={exportBackup}
                 className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
               >
-                <Download className="w-4 h-4" />
-                Exportar Backup
-              </button>
+                <Download className="w-4 h-4" />\n                <Download className="w-4 h-4" />\n                {t('settings.exportBackupBtn')}\n              </button>
             </div>
           </div>
 
@@ -373,9 +367,9 @@ export function SettingsView() {
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <Upload className="w-5 h-5 text-[#1a5eb8]" />
               <div>
-                <h3>Importar Backup</h3>
+                <h3>{t('settings.importBackup')}</h3>
                 <p className="text-xs font-normal text-slate-400 mt-0.5">
-                  Restaura a biblioteca a partir de um ficheiro.
+                  {t('settings.importDesc')}
                 </p>
               </div>
             </div>
@@ -393,7 +387,7 @@ export function SettingsView() {
                 className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 flex items-center gap-2 transition-colors shadow-sm"
               >
                 <FileText className="w-4 h-4 text-slate-500" />
-                Selecionar Ficheiro
+                {t('settings.selectFile')}
               </button>
             </div>
           </div>
@@ -403,9 +397,9 @@ export function SettingsView() {
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <Cloud className="w-5 h-5 text-[#1a5eb8]" />
               <div>
-                <h3>Backup Automático (Google Drive)</h3>
+                <h3>{t('settings.autoBackup')}</h3>
                 <p className="text-xs font-normal text-slate-400 mt-0.5">
-                  Sincroniza automaticamente um backup semanal para o Google Drive.
+                  {t('settings.autoBackupDesc')}
                 </p>
               </div>
             </div>
@@ -417,7 +411,7 @@ export function SettingsView() {
                 className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
               >
                 <Cloud className={`w-4 h-4 text-[#1a5eb8] ${isSyncingDrive ? 'animate-spin' : ''}`} />
-                Enviar para o Drive agora
+                {t('settings.sendDriveNow')}
               </button>
             </div>
           </div>
@@ -426,7 +420,7 @@ export function SettingsView() {
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
             <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base border-b border-slate-100 pb-3">
               <History className="w-5 h-5 text-[#1a5eb8]" />
-              <h3>Histórico de Backups</h3>
+              <h3>{t('settings.backupHistory')}</h3>
             </div>
 
             <div className="space-y-2 pt-1">
@@ -436,7 +430,7 @@ export function SettingsView() {
                     <Cloud className="w-4 h-4 text-slate-400 shrink-0" />
                     <div>
                       <span className="font-semibold text-slate-700">{item.date}</span>
-                      <p className="text-[11px] text-slate-400">{item.bookCount || books.length} livros encontrados · {item.type}</p>
+                      <p className="text-[11px] text-slate-400">{item.bookCount || books.length} {t('settings.booksFound')} · {item.type}</p>
                     </div>
                   </div>
                 </div>
@@ -449,22 +443,22 @@ export function SettingsView() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5 text-slate-800 font-bold text-base">
                 <RefreshCw className="w-5 h-5 text-[#1a5eb8]" />
-                <h3>Restaurar da Drive</h3>
+                <h3>{t('settings.restoreDrive')}</h3>
               </div>
               <button 
-                onClick={() => showToast("Backup verificado no Google Drive.")}
+                onClick={() => showToast(t('settings.driveVerified'))}
                 className="text-xs text-[#1a5eb8] font-medium hover:underline"
               >
-                #Atualizar
+                #{t('settings.refresh')}
               </button>
             </div>
 
             <p className="text-xs text-slate-400">
-              Restaura a tua biblioteca a partir de um backup no Google Drive.
+              {t('settings.restoreDriveDesc')}
             </p>
 
             <div className="text-center py-6 text-xs text-slate-400 bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
-              Nenhum backup encontrado no Drive.
+              {t('settings.noBackupFound')}
             </div>
           </div>
 
@@ -480,10 +474,10 @@ export function SettingsView() {
                 <Save className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Guardar Alterações
+                {t('settings.saveModalTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Pretende guardar as novas configurações da sua biblioteca?
+                {t('settings.saveModalMsg')}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
@@ -514,10 +508,10 @@ export function SettingsView() {
                 <RotateCcw className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Repor Configurações
+                {t('settings.resetModalTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Tem a certeza que deseja repor as configurações de fábrica? Irá perder todas as personalizações de forma irreversível.
+                {t('settings.resetModalMsg')}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">

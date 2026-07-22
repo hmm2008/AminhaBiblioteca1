@@ -207,7 +207,11 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     loadBooks();
-  }, [loadBooks]);
+    // Trigger an initial sync on load if online
+    if (navigator.onLine) {
+      sync();
+    }
+  }, []);
 
   // Attempt sync on network recovery
   useEffect(() => {
