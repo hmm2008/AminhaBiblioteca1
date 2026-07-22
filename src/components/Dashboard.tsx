@@ -9,7 +9,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
-  const { books } = useBooks();
+  const { books, settings } = useBooks();
 
   // Stats calculations
   const totalBooks = books.length;
@@ -49,12 +49,12 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
         <div className="max-w-6xl mx-auto space-y-8">
           
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                Bem-vindo à Biblioteca Pessoal de Manuel Francisco 📚
+                {settings.welcomeMessage || 'Bem-vindo à Biblioteca Pessoal 👋'}
               </h2>
-              <p className="text-slate-500 mt-1">A tua biblioteca pessoal em casa.</p>
+              <p className="text-slate-500 mt-1">{settings.subTitle || 'A tua biblioteca pessoal em casa.'}</p>
             </div>
             <button 
               onClick={onAddBook}

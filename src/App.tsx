@@ -12,6 +12,7 @@ import { LibraryView } from './components/LibraryView';
 import { ThemesView } from './components/ThemesView';
 import { BorrowedView } from './components/BorrowedView';
 import { ReportsView } from './components/ReportsView';
+import { SettingsView } from './components/SettingsView';
 import { BookForm } from './components/BookForm';
 import { useBooks } from './BookContext';
 import { LocalBook } from './types';
@@ -21,7 +22,7 @@ function AppContent() {
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [initialCategory, setInitialCategory] = useState<string>('Todos os temas');
-  const { addOrUpdateBook, books } = useBooks();
+  const { addOrUpdateBook, books, settings } = useBooks();
 
   const handleSaveBook = async (book: LocalBook) => {
     await addOrUpdateBook(book);
@@ -38,8 +39,11 @@ function AppContent() {
 
   return (
     <div className="h-screen flex flex-col lg:flex-row bg-gray-50 text-slate-800 font-sans selection:bg-blue-500/30 overflow-hidden">
-      <div className="lg:hidden bg-[#1a5eb8] text-white p-4 flex items-center justify-between shrink-0">
-        <h1 className="font-bold text-lg">Biblioteca Pessoal</h1>
+      <div 
+        style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
+        className="lg:hidden text-white p-4 flex items-center justify-between shrink-0"
+      >
+        <h1 className="font-bold text-base truncate">{settings.libraryName || 'Biblioteca Pessoal'}</h1>
         <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -mr-2 text-white hover:bg-white/10 rounded-lg transition-colors">
           <Menu className="w-6 h-6" />
         </button>
@@ -73,6 +77,7 @@ function AppContent() {
         }} />}
         {currentView === 'borrowed' && <BorrowedView />}
         {currentView === 'reports' && <ReportsView />}
+        {currentView === 'settings' && <SettingsView />}
         {currentView === 'add' && (
           <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
              <BookForm 
@@ -89,6 +94,7 @@ function AppContent() {
     </div>
   );
 }
+
 
 export default function App() {
   return (
