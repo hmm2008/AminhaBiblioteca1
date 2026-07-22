@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useBooks } from '../BookContext';
 import { Download, FileJson, FileText, Printer, BookOpen, Bookmark, Library, BookX, Book, X } from 'lucide-react';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export function ReportsView() {
   const { books, themes } = useBooks();
+  const { t } = useTranslation();
   const [exportFilter, setExportFilter] = useState<'todos' | 'lidos' | 'emprestados' | 'extraviados' | 'nao-lidos'>('todos');
   const [showPdfPreview, setShowPdfPreview] = useState(false);
 
@@ -82,72 +84,72 @@ export function ReportsView() {
         <div className="max-w-6xl mx-auto space-y-8">
           
           <div className="print:hidden">
-            <h2 className="text-2xl font-bold text-slate-800">Exportações e Relatórios</h2>
-            <p className="text-slate-500 mt-1">Exporta os teus livros ou imprime um relatório.</p>
+            <h2 className="text-2xl font-bold text-slate-800">{t('nav.reports')}</h2>
+            <p className="text-slate-500 mt-1">{t('reports.subtitle')}</p>
           </div>
 
           {/* Top Stats */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 print:hidden">
-            <StatCard label="Total" value={totalBooks} />
-            <StatCard label="Lidos" value={lidosCount} />
-            <StatCard label="Emprestados" value={emprestadosCount} />
-            <StatCard label="Extraviados" value={extraviadosCount} />
-            <StatCard label="Temas" value={temasCount} />
-            <StatCard label="Páginas totais" value={paginasTotais} />
+            <StatCard label={t('reports.stats.total')} value={totalBooks} />
+            <StatCard label={t('reports.stats.read')} value={lidosCount} />
+            <StatCard label={t('reports.stats.borrowed')} value={emprestadosCount} />
+            <StatCard label={t('reports.stats.lost')} value={extraviadosCount} />
+            <StatCard label={t('reports.stats.themes')} value={temasCount} />
+            <StatCard label={t('reports.stats.pages')} value={paginasTotais} />
           </div>
 
           <div className="space-y-6 print:hidden">
-            <h3 className="text-lg font-bold text-slate-800">Indicadores de Performance</h3>
+            <h3 className="text-lg font-bold text-slate-800">{t('reports.performanceTitle')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                 <div className="bg-orange-50 text-orange-600 p-3 rounded-lg"><BookOpen className="w-6 h-6" /></div>
                 <div>
                   <div className="text-2xl font-bold text-slate-800">0</div>
-                  <div className="text-xs text-slate-500 font-medium">Total de Empréstimos</div>
+                  <div className="text-xs text-slate-500 font-medium">{t('reports.kpi.totalLoans')}</div>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                 <div className="bg-emerald-50 text-emerald-600 p-3 rounded-lg"><BookOpen className="w-6 h-6" /></div>
                 <div>
                   <div className="text-2xl font-bold text-slate-800">0%</div>
-                  <div className="text-xs text-slate-500 font-medium">Devoluções no Prazo</div>
+                  <div className="text-xs text-slate-500 font-medium">{t('reports.kpi.onTimeReturns')}</div>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                 <div className="bg-blue-50 text-blue-600 p-3 rounded-lg"><Bookmark className="w-6 h-6" /></div>
                 <div>
                   <div className="text-2xl font-bold text-slate-800">0</div>
-                  <div className="text-xs text-slate-500 font-medium">Devoluções Concluídas</div>
+                  <div className="text-xs text-slate-500 font-medium">{t('reports.kpi.completedReturns')}</div>
                 </div>
               </div>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><BookOpen className="w-4 h-4 text-slate-400" /> Livros Mais Requisitados</h4>
-              <p className="text-sm text-slate-500 text-center py-4">Sem empréstimos registados</p>
+              <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><BookOpen className="w-4 h-4 text-slate-400" /> {t('reports.mostRequested')}</h4>
+              <p className="text-sm text-slate-500 text-center py-4">{t('reports.noLoans')}</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h4 className="text-sm font-bold text-slate-800 mb-4">Histórico Recente de Empréstimos</h4>
-              <p className="text-sm text-slate-500 text-center py-4">Sem histórico de empréstimos.</p>
+              <h4 className="text-sm font-bold text-slate-800 mb-4">{t('reports.recentHistory')}</h4>
+              <p className="text-sm text-slate-500 text-center py-4">{t('reports.noHistory')}</p>
             </div>
           </div>
 
           {/* Export Actions */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm print:hidden">
-            <h3 className="text-base font-bold text-slate-800 mb-1">Filtrar exportação</h3>
-            <p className="text-xs text-slate-500 mb-4">Seleciona quais livros incluir no ficheiro exportado.</p>
+            <h3 className="text-base font-bold text-slate-800 mb-1">{t('reports.filterTitle')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('reports.filterSubtitle')}</p>
             
             <div className="flex flex-wrap gap-2 mb-8">
-              <FilterButton active={exportFilter === 'todos'} onClick={() => setExportFilter('todos')} icon={<Library className="w-4 h-4" />} label="Todos os livros" count={totalBooks} />
-              <FilterButton active={exportFilter === 'lidos'} onClick={() => setExportFilter('lidos')} icon={<BookOpen className="w-4 h-4" />} label="Lidos" count={lidosCount} />
-              <FilterButton active={exportFilter === 'emprestados'} onClick={() => setExportFilter('emprestados')} icon={<Book className="w-4 h-4" />} label="Emprestados" count={emprestadosCount} />
-              <FilterButton active={exportFilter === 'extraviados'} onClick={() => setExportFilter('extraviados')} icon={<BookX className="w-4 h-4" />} label="Extraviados" count={extraviadosCount} />
-              <FilterButton active={exportFilter === 'nao-lidos'} onClick={() => setExportFilter('nao-lidos')} icon={<BookOpen className="w-4 h-4" />} label="Não lidos" count={naoLidosCount} />
+              <FilterButton active={exportFilter === 'todos'} onClick={() => setExportFilter('todos')} icon={<Library className="w-4 h-4" />} label={t('reports.filterAll')} count={totalBooks} />
+              <FilterButton active={exportFilter === 'lidos'} onClick={() => setExportFilter('lidos')} icon={<BookOpen className="w-4 h-4" />} label={t('reports.filterRead')} count={lidosCount} />
+              <FilterButton active={exportFilter === 'emprestados'} onClick={() => setExportFilter('emprestados')} icon={<Book className="w-4 h-4" />} label={t('reports.filterBorrowed')} count={emprestadosCount} />
+              <FilterButton active={exportFilter === 'extraviados'} onClick={() => setExportFilter('extraviados')} icon={<BookX className="w-4 h-4" />} label={t('reports.filterLost')} count={extraviadosCount} />
+              <FilterButton active={exportFilter === 'nao-lidos'} onClick={() => setExportFilter('nao-lidos')} icon={<BookOpen className="w-4 h-4" />} label={t('reports.filterUnread')} count={naoLidosCount} />
             </div>
 
-            <h3 className="text-base font-bold text-slate-800 mb-1">Exportar</h3>
-            <p className="text-xs text-slate-500 mb-4">{filteredBooks.length} livro(s) serão incluídos na exportação.</p>
+            <h3 className="text-base font-bold text-slate-800 mb-1">{t('reports.exportTitle')}</h3>
+            <p className="text-xs text-slate-500 mb-4">{t('reports.exportCount').replace('{count}', filteredBooks.length.toString())}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <button onClick={handleExportCSV} className="text-left p-4 rounded-xl border border-green-200 bg-green-50/50 hover:bg-green-50 transition-colors group">
@@ -170,18 +172,18 @@ export function ReportsView() {
 
           {/* Preview Table */}
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-slate-800 print:text-xl print:mb-4">Pré-visualização ({filteredBooks.length})</h3>
+            <h3 className="text-base font-bold text-slate-800 print:text-xl print:mb-4">{t('reports.previewTitle')} ({filteredBooks.length})</h3>
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50/50 text-xs font-semibold text-slate-500 uppercase border-b border-slate-200">
                     <tr>
-                      <th className="px-6 py-4">Título</th>
-                      <th className="px-6 py-4">Autor(es)</th>
-                      <th className="px-6 py-4">Tema</th>
-                      <th className="px-6 py-4">Estado</th>
-                      <th className="px-6 py-4">Estado de leitura</th>
-                      <th className="px-6 py-4">Ano</th>
+                      <th className="px-6 py-4">{t('library.title')}</th>
+                      <th className="px-6 py-4">{t('common.author')}</th>
+                      <th className="px-6 py-4">{t('common.category')}</th>
+                      <th className="px-6 py-4">{t('common.status')}</th>
+                      <th className="px-6 py-4">{t('bookForm.readStatus')}</th>
+                      <th className="px-6 py-4">{t('bookForm.publishYear')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -196,17 +198,23 @@ export function ReportsView() {
                             book.status === 'Extraviado' ? 'bg-red-50 text-red-700' :
                             'bg-blue-50 text-blue-700'
                           }`}>
-                            {book.status || 'Disponível'}
+                            {book.status === 'Emprestado' ? t('common.bookStatus.borrowed') :
+                             book.status === 'Extraviado' ? t('common.bookStatus.lost') :
+                             t('common.bookStatus.available')}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">{book.readStatus || 'Não Lido'}</td>
+                        <td className="px-6 py-4 text-slate-600">
+                           {book.readStatus === 'Lido' ? t('common.readStatus.read') :
+                             book.readStatus === 'A ler' ? t('common.readStatus.reading') :
+                             t('common.readStatus.unread')}
+                        </td>
                         <td className="px-6 py-4 text-slate-600">{book.publishedDate}</td>
                       </tr>
                     ))}
                     {filteredBooks.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                          Nenhum livro corresponde ao filtro selecionado.
+                          {t('reports.noMatches')}
                         </td>
                       </tr>
                     )}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useBooks } from '../BookContext';
 import { Search, Plus, Book, Users, Pencil, Trash2, Filter } from 'lucide-react';
 import { LocalBook } from '../types';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface LibraryViewProps {
   onAddBook: () => void;
@@ -11,6 +12,7 @@ interface LibraryViewProps {
 
 export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryViewProps) {
   const { books, removeBook, hardRemoveBook, themes } = useBooks();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory || 'Todos os temas');
   const [sortBy, setSortBy] = useState('Título');
@@ -48,15 +50,15 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Biblioteca</h2>
-              <p className="text-slate-500 mt-1">{books.length} livros</p>
+              <h2 className="text-2xl font-bold text-slate-800">{t('nav.library')}</h2>
+              <p className="text-slate-500 mt-1">{filteredBooks.length === 1 ? t('library.booksFound_one') : t('library.booksFound_other', { count: filteredBooks.length })}</p>
             </div>
             <button 
               onClick={onAddBook}
               className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
             >
               <Plus className="w-4 h-4" />
-              Adicionar Livro
+              {t('library.addBook')}
             </button>
           </div>
 
@@ -66,7 +68,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="Pesquisar livros por título, autor, ISBN..." 
+                placeholder={t('library.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-transparent border-none text-slate-700 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 rounded-xl"
@@ -80,7 +82,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
                 className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#1a5eb8] shadow-sm appearance-none min-w-[200px]"
               >
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>{cat === 'Todos os temas' ? t('library.allThemes') : cat}</option>
                 ))}
               </select>
 
@@ -89,7 +91,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
                 onChange={(e) => setSortBy(e.target.value)}
                 className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#1a5eb8] shadow-sm appearance-none min-w-[200px]"
               >
-                <option value="Título">Título</option>
+                <option value="Título">{t('library.title')}</option>
                 {/* Add more sort options if needed */}
               </select>
             </div>
@@ -108,7 +110,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
             {filteredBooks.length === 0 && (
               <div className="col-span-full text-center py-20 text-slate-400">
                 <Book className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                <p>Nenhum livro encontrado.</p>
+                <p>{t('library.noBooksFound')}</p>
               </div>
             )}
           </div>
@@ -125,10 +127,10 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
                 <Trash2 className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Eliminar Livro
+                {t('library.deleteTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Pretende mover este livro para a lixeira ou eliminá-lo definitivamente?
+                {t('library.deleteMessage')}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3 bg-slate-50">
@@ -136,19 +138,19 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
                 onClick={() => setBookToDelete(null)}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 hover:text-slate-900 transition-colors order-3 sm:order-1"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={() => { removeBook(bookToDelete); setBookToDelete(null); }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors order-2"
               >
-                Colocar no Lixo
+                {t('library.trashBtn')}
               </button>
               <button 
                 onClick={() => { hardRemoveBook(bookToDelete); setBookToDelete(null); }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors order-1 sm:order-3"
               >
-                Eliminar Definitivamente
+                {t('library.hardDeleteBtn')}
               </button>
             </div>
           </div>
@@ -159,6 +161,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
 }
 
 const BookCard: React.FC<{ book: LocalBook, onEdit: () => void, onDelete: () => any }> = ({ book, onEdit, onDelete }) => {
+  const { t } = useTranslation();
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col relative h-full">
       {/* Action Buttons Overlay */}
@@ -166,14 +169,14 @@ const BookCard: React.FC<{ book: LocalBook, onEdit: () => void, onDelete: () => 
         <button 
           onClick={(e) => { e.stopPropagation(); onEdit(); }}
           className="bg-white text-slate-600 hover:text-[#1a5eb8] p-1.5 rounded-full shadow-sm border border-slate-200"
-          title="Editar"
+          title={t('common.edit')}
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           className="bg-white text-slate-600 hover:text-red-600 p-1.5 rounded-full shadow-sm border border-slate-200"
-          title="Eliminar"
+          title={t('common.delete')}
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -191,11 +194,11 @@ const BookCard: React.FC<{ book: LocalBook, onEdit: () => void, onDelete: () => 
       <div className="p-4 flex flex-col flex-1">
         <h4 className="font-bold text-slate-800 text-sm leading-tight line-clamp-2 mb-1" title={book.title}>{book.title}</h4>
         <p className="text-xs text-slate-500 mb-3 line-clamp-1 flex items-center gap-1">
-          <Users className="w-3 h-3" /> {book.author || 'Autor desconhecido'}
+          <Users className="w-3 h-3" /> {book.author || t('common.author')}
         </p>
         <div className="mt-auto">
           <span className="inline-block bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-1 rounded-full truncate max-w-full">
-            {book.category || 'Sem categoria'}
+            {book.category || t('common.category')}
           </span>
         </div>
       </div>

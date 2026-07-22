@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ScanBarcode, Camera, Search, Loader2, Info } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useBooks } from '../BookContext';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface BookFormProps {
   book?: LocalBook | null;
@@ -14,6 +15,7 @@ interface BookFormProps {
 
 export function BookForm({ book, onSave, onClose }: BookFormProps) {
   const { themes, addTheme } = useBooks();
+  const { t } = useTranslation();
   const [isSearching, setIsSearching] = useState(false);
   const [searchNotFound, setSearchNotFound] = useState(false);
   const [searchMode, setSearchMode] = useState<'title' | 'author' | 'publisher'>('title');
@@ -320,8 +322,8 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-20">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">{book ? 'Editar Livro' : 'Adicionar Livro'}</h2>
-        <p className="text-slate-500 mt-1">Insere o ISBN/EAN para pesquisar os dados automaticamente.</p>
+        <h2 className="text-2xl font-bold text-slate-800">{book ? t('bookForm.editTitle') : t('bookForm.addTitle')}</h2>
+        <p className="text-slate-500 mt-1">{book ? t('bookForm.editSubtitle') : t('bookForm.addSubtitle')}</p>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
@@ -335,7 +337,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 searchMode === mode ? 'bg-[#1a5eb8] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {mode === 'title' ? 'Título' : mode === 'author' ? 'Autor' : 'Editora'}
+              {mode === 'title' ? t('library.title') : mode === 'author' ? t('common.author') : t('bookForm.publisher')}
             </button>
           ))}
         </div>
@@ -353,14 +355,14 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             className="bg-[#8bb4eb]/30 text-[#1a5eb8] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
           >
             {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Pesquisar
+            {t('common.search')}
           </button>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
         <div>
-          <h3 className="font-semibold text-slate-800 mb-4">Pesquisa por ISBN / EAN</h3>
+          <h3 className="font-semibold text-slate-800 mb-4">{t('bookForm.searchIsbn')}</h3>
           <div className="flex gap-3">
             <div className="relative flex-1">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">#</span>
@@ -378,7 +380,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
               className="bg-[#8bb4eb]/30 text-[#1a5eb8] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              Pesquisar
+              {t('common.search')}
             </button>
           </div>
         </div>
@@ -406,38 +408,38 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
         <div className="mb-6">
-          <h3 className="font-semibold text-slate-800">Dados do Livro</h3>
+          <h3 className="font-semibold text-slate-800">{t('bookForm.mainDetails')}</h3>
           <p className="text-sm text-slate-500">Preenche os campos manualmente.</p>
         </div>
 
         <form id="book-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">TÍTULO *</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.bookTitle')} *</label>
             <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">AUTOR(ES)</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('common.author')}</label>
             <input type="text" value={formData.author || ''} onChange={e => setFormData({...formData, author: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">EDITORA</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.publisher')}</label>
             <input type="text" value={formData.publisher || ''} onChange={e => setFormData({...formData, publisher: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">ANO DE PUBLICAÇÃO</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.publishYear')}</label>
             <input type="text" value={formData.publishedDate || ''} onChange={e => setFormData({...formData, publishedDate: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">ISBN / EAN</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.isbn')}</label>
             <input type="text" value={formData.isbn || ''} onChange={e => setFormData({...formData, isbn: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">Nº DE PÁGINAS</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.pages')}</label>
             <input type="text" value={formData.pageCount || ''} onChange={e => setFormData({...formData, pageCount: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
           </div>
 
@@ -458,7 +460,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">TEMA / CATEGORIA</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('common.category')}</label>
             <select 
               value={formData.category || ''} 
               onChange={e => {
@@ -527,7 +529,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 tracking-wider">SINOPSE / DESCRIÇÃO</label>
+            <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.notes')}</label>
             <textarea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-32 focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 resize-none" />
           </div>
 
@@ -538,23 +540,23 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 tracking-wider">ESTADO</label>
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('common.status')}</label>
               <select value={formData.status || 'Disponível'} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
-                <option value="Disponível">Disponível</option>
-                <option value="Emprestado">Emprestado</option>
-                <option value="Extraviado">Extraviado</option>
+                <option value="Disponível">{t('common.bookStatus.available')}</option>
+                <option value="Emprestado">{t('common.bookStatus.borrowed')}</option>
+                <option value="Extraviado">{t('common.bookStatus.lost')}</option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 tracking-wider">ESTADO DE LEITURA</label>
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.readStatus')}</label>
               <select value={formData.readStatus || 'Não Lido'} onChange={e => setFormData({...formData, readStatus: e.target.value as ReadStatus})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
-                <option value="Não Lido">Não lido</option>
-                <option value="A ler">A ler</option>
-                <option value="Lido">Lido</option>
+                <option value="Não Lido">{t('common.readStatus.unread')}</option>
+                <option value="A ler">{t('common.readStatus.reading')}</option>
+                <option value="Lido">{t('common.readStatus.read')}</option>
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-[10px] font-bold text-slate-500 tracking-wider">AVALIAÇÃO</label>
+              <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('common.rating')}</label>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button 
@@ -576,10 +578,10 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
 
       <div className="flex gap-4 justify-end">
         <button onClick={onClose} className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
-          Cancelar
+          {t('common.cancel')}
         </button>
         <button type="submit" form="book-form" className="px-8 py-2.5 bg-[#1a5eb8] text-white font-semibold rounded-lg hover:bg-[#154a93] transition-colors shadow-sm">
-          Guardar Livro
+          {book ? t('bookForm.updateBook') : t('bookForm.saveBook')}
         </button>
       </div>
 

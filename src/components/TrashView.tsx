@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Trash2, RefreshCcw, AlertTriangle, Box } from 'lucide-react';
 import { useBooks } from '../BookContext';
+import { useTranslation } from '../i18n/LanguageContext';
 
 import { LocalBook } from '../types';
 
 export function TrashView() {
   const { trashedBooks, hardRemoveBook, restoreBook } = useBooks();
+  const { t } = useTranslation();
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
   const [bookToRestore, setBookToRestore] = useState<LocalBook | null>(null);
 
@@ -16,8 +18,8 @@ export function TrashView() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Lixeira</h2>
-              <p className="text-slate-500 mt-0.5 text-sm">Livros eliminados. Podes restaurar ou eliminar permanentemente.</p>
+              <h2 className="text-2xl font-bold text-slate-800">{t('trash.title')}</h2>
+              <p className="text-slate-500 mt-0.5 text-sm">{t('trash.subtitle')}</p>
             </div>
           </div>
 
@@ -25,9 +27,9 @@ export function TrashView() {
           {trashedBooks.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-12 shadow-sm flex flex-col items-center justify-center text-center">
               <Box className="w-16 h-16 text-slate-300 mb-4" />
-              <h3 className="text-slate-800 font-semibold mb-2">A lixeira está vazia</h3>
+              <h3 className="text-slate-800 font-semibold mb-2">{t('trash.emptyTitle')}</h3>
               <p className="text-slate-500 text-sm max-w-sm">
-                Não tens nenhum livro eliminado neste momento.
+                {t('trash.emptySubtitle')}
               </p>
             </div>
           ) : (
@@ -36,10 +38,10 @@ export function TrashView() {
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
                     <tr>
-                      <th className="px-6 py-4">Título do Livro</th>
-                      <th className="px-6 py-4">Autor</th>
-                      <th className="px-6 py-4">Categoria</th>
-                      <th className="px-6 py-4">Status de Leitura</th>
+                      <th className="px-6 py-4">{t('library.title')}</th>
+                      <th className="px-6 py-4">{t('common.author')}</th>
+                      <th className="px-6 py-4">{t('common.category')}</th>
+                      <th className="px-6 py-4">{t('bookForm.readStatus')}</th>
                       <th className="px-6 py-4 text-right">Ações</th>
                     </tr>
                   </thead>
@@ -61,7 +63,9 @@ export function TrashView() {
                             book.readStatus === 'A ler' ? 'bg-amber-50 text-amber-700' :
                             'bg-slate-100 text-slate-700'
                           }`}>
-                            {book.readStatus}
+                            {book.readStatus === 'Lido' ? t('common.readStatus.read') :
+                             book.readStatus === 'A ler' ? t('common.readStatus.reading') :
+                             t('common.readStatus.unread')}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -69,14 +73,14 @@ export function TrashView() {
                             <button
                               onClick={() => setBookToRestore(book)}
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Restaurar"
+                              title={t('trash.restoreAction')}
                             >
                               <RefreshCcw className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setBookToDelete(book.id)}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Eliminar permanentemente"
+                              title={t('trash.deleteAction')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -101,10 +105,10 @@ export function TrashView() {
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Eliminar Permanentemente
+                {t('trash.deleteConfirmTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Tem a certeza que deseja eliminar este livro permanentemente? Esta ação não pode ser desfeita.
+                {t('trash.deleteConfirmSubtitle')}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
@@ -112,13 +116,13 @@ export function TrashView() {
                 onClick={() => setBookToDelete(null)}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={() => { hardRemoveBook(bookToDelete); setBookToDelete(null); }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
               >
-                Eliminar
+                {t('trash.deleteAction')}
               </button>
             </div>
           </div>
@@ -134,7 +138,7 @@ export function TrashView() {
                 <RefreshCcw className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
-                Restaurar Livro
+                {t('trash.restoreConfirmTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
                 Pretende restaurar "{bookToRestore.title}" para a sua biblioteca?
@@ -145,14 +149,14 @@ export function TrashView() {
                 onClick={() => setBookToRestore(null)}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={() => { restoreBook(bookToRestore); setBookToRestore(null); }}
                 style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
               >
-                Restaurar
+                {t('trash.restoreAction')}
               </button>
             </div>
           </div>

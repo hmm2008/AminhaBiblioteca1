@@ -17,6 +17,7 @@ import { TrashView } from './components/TrashView';
 import { BookForm } from './components/BookForm';
 import { useBooks } from './BookContext';
 import { LocalBook } from './types';
+import { useTranslation } from './i18n/LanguageContext';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<string>('dashboard');
@@ -24,6 +25,7 @@ function AppContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [initialCategory, setInitialCategory] = useState<string>('Todos os temas');
   const { addOrUpdateBook, books, settings } = useBooks();
+  const { t } = useTranslation();
 
   const handleSaveBook = async (book: LocalBook) => {
     await addOrUpdateBook(book);
@@ -44,7 +46,7 @@ function AppContent() {
         style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
         className="lg:hidden text-white p-4 flex items-center justify-between shrink-0"
       >
-        <h1 className="font-bold text-base truncate">{settings.libraryName || 'Biblioteca Pessoal'}</h1>
+        <h1 className="font-bold text-base truncate">{settings.libraryName || t('settings.libraryName')}</h1>
         <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -mr-2 text-white hover:bg-white/10 rounded-lg transition-colors">
           <Menu className="w-6 h-6" />
         </button>

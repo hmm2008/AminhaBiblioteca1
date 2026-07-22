@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useBooks } from '../BookContext';
 import { AppSettings, DEFAULT_SETTINGS } from '../types';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export function SettingsView() {
   const { 
@@ -17,6 +18,7 @@ export function SettingsView() {
     addBackupRecord,
     books 
   } = useBooks();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState<AppSettings>(settings);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -106,8 +108,8 @@ export function SettingsView() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">Configurações</h2>
-              <p className="text-slate-500 mt-0.5 text-sm">Personaliza a tua biblioteca.</p>
+              <h2 className="text-2xl font-bold text-slate-800">{t('settings.title')}</h2>
+              <p className="text-slate-500 mt-0.5 text-sm">{t('settings.subtitle')}</p>
             </div>
             
             <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-3">
@@ -116,7 +118,7 @@ export function SettingsView() {
                 className="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-900 active:bg-slate-200 flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 <RotateCcw className="w-4 h-4 text-slate-500" />
-                Repor Pré-Configurações
+                {t('settings.reset')}
               </button>
               
               <button
@@ -125,7 +127,7 @@ export function SettingsView() {
                 className="px-5 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-85 hover:shadow-md active:opacity-100 flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 <Save className="w-4 h-4" />
-                Guardar
+                {t('common.save')}
               </button>
             </div>
           </div>
@@ -489,14 +491,14 @@ export function SettingsView() {
                 onClick={() => setShowSaveModal(false)}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={confirmSave}
                 style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
               >
-                Guardar
+                {t('common.save')}
               </button>
             </div>
           </div>
@@ -523,7 +525,7 @@ export function SettingsView() {
                 onClick={() => setShowResetModal(false)}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={confirmReset}

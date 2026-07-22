@@ -1,6 +1,7 @@
 import React from 'react';
-import { Home, Library, PlusCircle, Bookmark, Users, BarChart2, Archive, Settings, Trash2, LogOut, RefreshCw, Cloud, CloudOff } from 'lucide-react';
+import { Home, Library, PlusCircle, Bookmark, Users, BarChart2, Settings, Trash2, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { useBooks } from '../BookContext';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface SidebarProps {
   currentView: string;
@@ -25,19 +26,19 @@ function timeSince(date: Date) {
 }
 
 export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: SidebarProps) {
-  const { isSyncing, lastSync, syncError, sync, books, settings, exportBackup } = useBooks();
+  const { isSyncing, lastSync, syncError, sync, books, settings } = useBooks();
+  const { language, setLanguage, t } = useTranslation();
   const pendingCount = books.filter(b => b.syncStatus === 'pending').length;
 
   const defaultNavItems = [
-    { id: 'dashboard', defaultLabel: 'Início', icon: Home },
-    { id: 'library', defaultLabel: 'Biblioteca', icon: Library },
-    { id: 'add', defaultLabel: 'Adicionar Livro', icon: PlusCircle },
-    { id: 'themes', defaultLabel: 'Temas', icon: Bookmark },
-    { id: 'borrowed', defaultLabel: 'Emprestados', icon: Users },
-    { id: 'reports', defaultLabel: 'Relatórios', icon: BarChart2 },
-    { id: 'archive', defaultLabel: 'Arquivo', icon: Archive },
-    { id: 'settings', defaultLabel: 'Configurações', icon: Settings },
-    { id: 'trash', defaultLabel: 'Lixeira', icon: Trash2 },
+    { id: 'dashboard', defaultLabel: t('nav.dashboard'), icon: Home },
+    { id: 'library', defaultLabel: t('nav.library'), icon: Library },
+    { id: 'add', defaultLabel: t('nav.add'), icon: PlusCircle },
+    { id: 'themes', defaultLabel: t('nav.themes'), icon: Bookmark },
+    { id: 'borrowed', defaultLabel: t('nav.borrowed'), icon: Users },
+    { id: 'reports', defaultLabel: t('nav.reports'), icon: BarChart2 },
+    { id: 'settings', defaultLabel: t('nav.settings'), icon: Settings },
+    { id: 'trash', defaultLabel: t('nav.trash'), icon: Trash2 },
   ];
 
   return (
@@ -71,7 +72,8 @@ export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: Sideba
           {defaultNavItems.map((item) => {
             const isActive = currentView === item.id;
             const isWired = ['dashboard', 'add', 'library', 'themes', 'borrowed', 'reports', 'settings', 'trash'].includes(item.id);
-            const displayLabel = settings.navLabels?.[item.id] || item.defaultLabel;
+            // Ignore custom settings if they haven't been changed from defaults or prefer translation
+            const displayLabel = item.defaultLabel;
             
             return (
               <li key={item.id}>
@@ -111,21 +113,28 @@ export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: Sideba
               <Cloud className="w-4 h-4 text-emerald-300" title={`Sincronizado há ${lastSync ? timeSince(lastSync) : 'pouco'}`} />
             )}
           </button>
-          {syncError && <div className="text-[10px] text-red-200 mt-1 px-1">Erro de Sincronização</div>}
+          {syncError && <div className="text-[10px] text-red-200 mt-1 px-1">{t('sidebar.syncError')}</div>}
         </div>
 
-        <button 
-          onClick={exportBackup}
-          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium text-blue-100 hover:bg-white/10 hover:text-white transition-colors border border-white/20"
-        >
-          <LogOut className="w-4 h-4 opacity-80" />
-          Exportar CSV
-        </button>
-        
         <div className="flex gap-4 px-4 py-2 text-xs text-blue-200 mt-2">
-          <button className="hover:text-white font-bold text-white">PT</button>
-          <button className="hover:text-white">EN</button>
-          <button className="hover:text-white">FR</button>
+          <button 
+            className={`hover:text-white ${language === 'pt' ? 'font-bold text-white' : ''}`}
+            onClick={() => setLanguage('pt')}
+          >
+            PT
+          </button>
+          <button 
+            className={`hover:text-white ${language === 'en' ? 'font-bold text-white' : ''}`}
+            onClick={() => setLanguage('en')}
+          >
+            EN
+          </button>
+          <button 
+            className={`hover:text-white ${language === 'fr' ? 'font-bold text-white' : ''}`}
+            onClick={() => setLanguage('fr')}
+          >
+            FR
+          </button>
         </div>
         <div className="px-4 text-[10px] text-blue-300 flex justify-between">
           <span>v1.0<br/>© 2026 Manuel Francisco</span>
