@@ -20,6 +20,7 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<string>('dashboard');
   const [editingBookId, setEditingBookId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [initialCategory, setInitialCategory] = useState<string>('Todos os temas');
   const { addOrUpdateBook, books } = useBooks();
 
   const handleSaveBook = async (book: LocalBook) => {
@@ -50,14 +51,18 @@ function AppContent() {
         onClose={() => setIsMobileMenuOpen(false)}
         setCurrentView={(v) => {
           if (v !== 'add') setEditingBookId(null);
+          setInitialCategory('Todos os temas'); // Always reset when navigating via sidebar
           setCurrentView(v);
           setIsMobileMenuOpen(false);
         }} 
       />
       <main className="flex-1 overflow-hidden flex flex-col relative">
         {currentView === 'dashboard' && <Dashboard onAddBook={() => setCurrentView('add')} />}
-        {currentView === 'library' && <LibraryView onAddBook={() => setCurrentView('add')} onEditBook={handleEditBook} />}
-        {currentView === 'themes' && <ThemesView />}
+        {currentView === 'library' && <LibraryView onAddBook={() => setCurrentView('add')} onEditBook={handleEditBook} initialCategory={initialCategory} />}
+        {currentView === 'themes' && <ThemesView onNavigateToLibrary={(theme) => {
+          setInitialCategory(theme);
+          setCurrentView('library');
+        }} />}
         {currentView === 'borrowed' && <BorrowedView />}
         {currentView === 'reports' && <ReportsView />}
         {currentView === 'add' && (

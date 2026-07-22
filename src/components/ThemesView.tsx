@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Bookmark, Plus, Trash2 } from 'lucide-react';
 import { useBooks } from '../BookContext';
 
-export function ThemesView() {
-  const { themes, books, addTheme, removeTheme } = useBooks();
+interface ThemesViewProps {
+  onNavigateToLibrary?: (theme: string) => void;
+}
 
-  const handleAddTheme = () => {
-    const newTheme = window.prompt("Nome do novo tema:");
-    if (newTheme && newTheme.trim()) {
-      addTheme(newTheme.trim());
+export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
+  const { themes, books, addTheme, removeTheme } = useBooks();
+  const [isAddingTheme, setIsAddingTheme] = useState(false);
+  const [newThemeName, setNewThemeName] = useState('');
+  const [themeToDelete, setThemeToDelete] = useState<string | null>(null);
+
+  const handleAddThemeSubmit = () => {
+    if (newThemeName.trim()) {
+      addTheme(newThemeName.trim());
+      setIsAddingTheme(false);
+      setNewThemeName('');
     }
   };
 
@@ -24,7 +32,7 @@ export function ThemesView() {
               <p className="text-slate-500 mt-1">Categorias da tua biblioteca.</p>
             </div>
             <button 
-              onClick={handleAddTheme}
+              onClick={() => setIsAddingTheme(true)}
               className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0 shadow-sm"
             >
               <Plus className="w-4 h-4" />
@@ -51,11 +59,7 @@ export function ThemesView() {
                         {bookCount}
                       </span>
                       <button 
-                        onClick={() => {
-                          if (window.confirm(`Tem a certeza que quer apagar o tema "${theme}"?`)) {
-                            removeTheme(theme);
-                          }
-                        }}
+                        onClick={() => setThemeToDelete(theme)}
                         className="text-slate-400 hover:text-red-600 transition-colors"
                         title="Eliminar tema"
                       >
@@ -66,7 +70,10 @@ export function ThemesView() {
                   
                   {bookCount > 0 ? (
                     <div className="pt-2 border-t border-slate-100">
-                      <button className="text-[#1a5eb8] text-xs font-medium hover:underline flex items-center gap-1">
+                      <button 
+                        onClick={() => onNavigateToLibrary && onNavigateToLibrary(theme)}
+                        className="text-[#1a5eb8] text-xs font-medium hover:underline flex items-center gap-1"
+                      >
                         <Bookmark className="w-3 h-3" /> Ver {bookCount} livro{bookCount > 1 ? 's' : ''}
                       </button>
                     </div>
@@ -85,6 +92,87 @@ export function ThemesView() {
           
         </div>
       </div>
+
+      {/* Add Theme Modal */}
+      {isAddingTheme && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">
+                Novo Tema
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                Introduza o nome da nova categoria. Ela ficará disponível para futuras utilizações.
+              </p>
+              <input 
+                type="text"
+                autoFocus
+                value={newThemeName}
+                onChange={e => setNewThemeName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleAddThemeSubmit();
+                }}
+                placeholder="Nome da categoria..."
+                className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+              />
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => {
+                  setIsAddingTheme(false);
+                  setNewThemeName('');
+                }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleAddThemeSubmit}
+                disabled={!newThemeName.trim()}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[#1a5eb8] text-white hover:bg-[#154a93] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Gravar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Theme Confirmation Modal */}
+      {themeToDelete && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-50 mb-4 text-red-600 mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
+                Apagar Tema
+              </h3>
+              <p className="text-sm text-slate-500 text-center">
+                Tem a certeza que deseja apagar o tema "{themeToDelete}"? Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
+              <button 
+                onClick={() => setThemeToDelete(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => { 
+                  removeTheme(themeToDelete); 
+                  setThemeToDelete(null); 
+                }}
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Apagar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

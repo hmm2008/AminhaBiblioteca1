@@ -6,14 +6,21 @@ import { LocalBook } from '../types';
 interface LibraryViewProps {
   onAddBook: () => void;
   onEditBook: (id: string) => void;
+  initialCategory?: string;
 }
 
-export function LibraryView({ onAddBook, onEditBook }: LibraryViewProps) {
+export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryViewProps) {
   const { books, removeBook, themes } = useBooks();
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('Todos os temas');
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory || 'Todos os temas');
   const [sortBy, setSortBy] = useState('Título');
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (initialCategory) {
+      setCategoryFilter(initialCategory);
+    }
+  }, [initialCategory]);
 
   const categories = ['Todos os temas', ...themes];
 
@@ -49,7 +56,7 @@ export function LibraryView({ onAddBook, onEditBook }: LibraryViewProps) {
               className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
             >
               <Plus className="w-4 h-4" />
-              Adicionar
+              Adicionar Livro
             </button>
           </div>
 
