@@ -7,7 +7,7 @@ import { LocalBook } from '../types';
 
 export function TrashView() {
   const { trashedBooks, hardRemoveBook, restoreBook } = useBooks();
-  const { t } = useTranslation();
+  const { t, translateTheme } = useTranslation();
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
   const [bookToRestore, setBookToRestore] = useState<LocalBook | null>(null);
 
@@ -54,7 +54,7 @@ export function TrashView() {
                         <td className="px-6 py-4 text-slate-600">{book.author}</td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                            {book.category}
+                            {translateTheme(book.category || '')}
                           </span>
                         </td>
                         <td className="px-6 py-4">

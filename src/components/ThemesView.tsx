@@ -53,7 +53,7 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
                       <div className="bg-blue-50 text-[#1a5eb8] p-2 rounded-lg">
                         <Bookmark className="w-4 h-4" />
                       </div>
-                      <span className="font-semibold text-slate-700 text-sm">{theme}</span>
+                      <span className="font-semibold text-slate-700 text-sm">{translateTheme(theme)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="bg-slate-100 text-[#1a5eb8] text-xs font-bold px-2 py-0.5 rounded-full">
@@ -75,7 +75,7 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
                         onClick={() => onNavigateToLibrary && onNavigateToLibrary(theme)}
                         className="text-[#1a5eb8] text-xs font-medium hover:underline flex items-center gap-1"
                       >
-                        <Bookmark className="w-3 h-3" /> {(bookCount === 1 ? '1 livro' : `${bookCount} livros`)}
+                        <Bookmark className="w-3 h-3" /> {bookCount === 1 ? t('themes.bookCount_one') : t('themes.bookCount_other', { count: bookCount })}
                       </button>
                     </div>
                   ) : null}
@@ -151,7 +151,7 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
                 {t('themes.deleteTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                {t('themes.deleteMessage').replace('{theme}', themeToDelete)}
+                {t('themes.deleteMessage').replace('{theme}', translateTheme(themeToDelete))}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">

@@ -205,7 +205,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
                     </p>
                     <div className="mt-auto">
                       <span className="inline-block bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-1 rounded-full truncate max-w-full">
-                        {book.category}
+                        {translateTheme(book.category || '')}
                       </span>
                     </div>
                   </div>
