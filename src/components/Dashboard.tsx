@@ -21,12 +21,32 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
   const read = books.filter(b => b.readStatus === 'Lido').length;
   const unread = totalBooks - read;
 
-  // Chart data calculation
-  const months = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
-  const chartData = months.slice(1, 7).map(month => ({
-    name: month,
-    uv: month === 'jul.' ? totalBooks : 0 // Fake data for previous months, current month has total
-  }));
+  // Chart data calculation - real data based on dateAdded
+  const chartData = React.useMemo(() => {
+    const data: Record<string, number> = {};
+    const now = new Date();
+    // Get last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(d);
+      data[monthName] = 0;
+    }
+    
+    books.forEach(book => {
+      if (book.dateAdded) {
+        const d = new Date(book.dateAdded);
+        const diffMonths = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+        if (diffMonths >= 0 && diffMonths <= 5) {
+          const monthName = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(d);
+          if (data[monthName] !== undefined) {
+            data[monthName]++;
+          }
+        }
+      }
+    });
+
+    return Object.entries(data).map(([name, uv]) => ({ name, uv }));
+  }, [books]);
 
   // Categories popular
   const categoryCounts = books.reduce((acc, book) => {
@@ -53,19 +73,20 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
           {/* Header */}
           <div>
             <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              {t('dashboard.welcome')}
+              {settings.welcomeMessage || t('dashboard.welcome')}
             </h2>
-            <p className="text-slate-500 mt-1">{t('dashboard.subtitle')}</p>
+            <p className="text-slate-500 mt-1">{settings.subTitle || t('dashboard.subtitle')}</p>
           </div>
 
           {/* Search */}
-          <div className="relative bg-white rounded-xl shadow-sm border border-slate-200">
+          <div 
+            onClick={onViewLibrary}
+            className="relative bg-white rounded-xl shadow-sm border border-slate-200 cursor-text hover:border-slate-300 transition-colors"
+          >
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder={t('library.searchPlaceholder')}
-              className="w-full bg-transparent border-none text-slate-700 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 rounded-xl"
-            />
+            <div className="w-full bg-transparent border-none text-slate-400 pl-12 pr-4 py-3 text-sm rounded-xl">
+              {t('library.searchPlaceholder')}
+            </div>
           </div>
 
           {/* Estatísticas */}
@@ -92,7 +113,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                     <Tooltip cursor={{fill: '#f1f5f9'}} />
-                    <Bar dataKey="uv" fill="#1a5eb8" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="uv" fill="var(--color-primary)" radius={[4, 4, 0, 0]} maxBarSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -101,7 +122,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
             {/* Categories */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
               <h3 className="text-sm font-semibold text-slate-800 mb-6 flex items-center gap-2">
-                <span className="text-[#1a5eb8]">🏷️</span> {t('dashboard.themes')}
+                <span className="text-[var(--color-primary)]">🏷️</span> {t('dashboard.themes')}
               </h3>
               
               <div className="flex-1 space-y-5">
@@ -124,7 +145,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
                   <span className="text-slate-500">{read} / {totalBooks} · {readPercent}%</span>
                 </div>
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#1a5eb8] rounded-full" style={{ width: `${readPercent}%` }}></div>
+                  <div className="h-full bg-[var(--color-primary)] rounded-full" style={{ width: `${readPercent}%` }}></div>
                 </div>
               </div>
             </div>
@@ -147,7 +168,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-slate-800">{t('dashboard.reading')}</h3>
-              <button onClick={onViewLibrary} className="text-sm text-[#1a5eb8] font-medium hover:underline">{t('dashboard.viewAll')} →</button>
+              <button onClick={onViewLibrary} className="text-sm text-[var(--color-primary)] font-medium hover:underline">{t('dashboard.viewAll')} →</button>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -183,7 +204,7 @@ export function Dashboard({ onAddBook, onViewLibrary }: DashboardProps) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-slate-800">{t('dashboard.recent')}</h3>
-              <button onClick={onViewLibrary} className="text-sm text-[#1a5eb8] font-medium hover:underline">{t('dashboard.viewAll')} →</button>
+              <button onClick={onViewLibrary} className="text-sm text-[var(--color-primary)] font-medium hover:underline">{t('dashboard.viewAll')} →</button>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">

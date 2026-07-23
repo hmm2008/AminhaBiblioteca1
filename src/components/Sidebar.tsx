@@ -2,6 +2,7 @@ import React from 'react';
 import { Home, Library, PlusCircle, Bookmark, Users, BarChart2, Settings, Trash2, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { useBooks } from '../BookContext';
 import { useTranslation } from '../i18n/LanguageContext';
+import { isDefaultNavLabel } from '../types';
 
 interface SidebarProps {
   currentView: string;
@@ -37,8 +38,8 @@ export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: Sideba
     { id: 'themes', defaultLabel: t('nav.themes'), icon: Bookmark },
     { id: 'borrowed', defaultLabel: t('nav.borrowed'), icon: Users },
     { id: 'reports', defaultLabel: t('nav.reports'), icon: BarChart2 },
-    { id: 'settings', defaultLabel: t('nav.settings'), icon: Settings },
     { id: 'trash', defaultLabel: t('nav.trash'), icon: Trash2 },
+    { id: 'settings', defaultLabel: t('nav.settings'), icon: Settings },
   ];
 
   return (
@@ -72,8 +73,8 @@ export function Sidebar({ currentView, setCurrentView, isOpen, onClose }: Sideba
           {defaultNavItems.map((item) => {
             const isActive = currentView === item.id;
             const isWired = ['dashboard', 'add', 'library', 'themes', 'borrowed', 'reports', 'settings', 'trash'].includes(item.id);
-            // Ignore custom settings if they haven't been changed from defaults or prefer translation
-            const displayLabel = item.defaultLabel;
+            const customLabel = settings.navLabels?.[item.id as keyof typeof settings.navLabels];
+            const displayLabel = customLabel && !isDefaultNavLabel(item.id, customLabel) ? customLabel : item.defaultLabel;
             
             return (
               <li key={item.id}>

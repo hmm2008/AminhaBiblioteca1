@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 import { useBooks } from '../BookContext';
 import { Download, FileJson, FileText, Printer, BookOpen, Bookmark, Library, BookX, Book, X } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
+import { isDefaultNavLabel } from '../types';
 
 export function ReportsView() {
-  const { books, themes } = useBooks();
+  const { books, themes, settings } = useBooks();
   const { t, translateTheme } = useTranslation();
   const [exportFilter, setExportFilter] = useState<'todos' | 'lidos' | 'emprestados' | 'extraviados' | 'nao-lidos'>('todos');
   const [showPdfPreview, setShowPdfPreview] = useState(false);
 
   const [showExportConfirm, setShowExportConfirm] = useState<'csv' | 'json' | null>(null);
+
+  const customNavLabel = settings?.navLabels?.reports;
+  const pageTitle = customNavLabel && !isDefaultNavLabel('reports', customNavLabel)
+    ? customNavLabel
+    : t('nav.reports');
 
   // Stats calculations
   const totalBooks = books.length;
@@ -84,7 +90,7 @@ export function ReportsView() {
         <div className="max-w-6xl mx-auto space-y-8">
           
           <div className="print:hidden">
-            <h2 className="text-2xl font-bold text-slate-800">{t('nav.reports')}</h2>
+            <h2 className="text-2xl font-bold text-slate-800">{pageTitle}</h2>
             <p className="text-slate-500 mt-1">{t('reports.subtitle')}</p>
           </div>
 
@@ -309,7 +315,7 @@ export function ReportsView() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 print:hidden">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
             <div className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4 text-[#1a5eb8] mx-auto">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4 text-[var(--color-primary)] mx-auto">
                 <Download className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
@@ -328,7 +334,7 @@ export function ReportsView() {
               </button>
               <button 
                 onClick={showExportConfirm === 'csv' ? executeExportCSV : executeExportJSON}
-                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[#1a5eb8] text-white hover:bg-[#154a93] transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors"
               >
                 Gravar
               </button>
@@ -355,7 +361,7 @@ function FilterButton({ active, onClick, icon, label, count }: { active: boolean
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
         active 
-          ? 'bg-[#1a5eb8] border-[#1a5eb8] text-white shadow-sm' 
+          ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white shadow-sm' 
           : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
       }`}
     >

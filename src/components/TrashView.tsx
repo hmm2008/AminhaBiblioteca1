@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { Trash2, RefreshCcw, AlertTriangle, Box } from 'lucide-react';
 import { useBooks } from '../BookContext';
 import { useTranslation } from '../i18n/LanguageContext';
-
-import { LocalBook } from '../types';
+import { LocalBook, isDefaultNavLabel } from '../types';
 
 export function TrashView() {
-  const { trashedBooks, hardRemoveBook, restoreBook } = useBooks();
+  const { trashedBooks, hardRemoveBook, restoreBook, settings } = useBooks();
   const { t, translateTheme } = useTranslation();
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
   const [bookToRestore, setBookToRestore] = useState<LocalBook | null>(null);
+
+  const customNavLabel = settings?.navLabels?.trash;
+  const pageTitle = customNavLabel && !isDefaultNavLabel('trash', customNavLabel)
+    ? customNavLabel
+    : t('nav.trash');
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-gray-50/50">
@@ -18,7 +22,7 @@ export function TrashView() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">{t('trash.title')}</h2>
+              <h2 className="text-2xl font-bold text-slate-800">{pageTitle}</h2>
               <p className="text-slate-500 mt-0.5 text-sm">{t('trash.subtitle')}</p>
             </div>
           </div>
@@ -134,14 +138,14 @@ export function TrashView() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4 text-[#1a5eb8] mx-auto">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-4 text-[var(--color-primary)] mx-auto">
                 <RefreshCcw className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 text-center mb-2">
                 {t('trash.restoreConfirmTitle')}
               </h3>
               <p className="text-sm text-slate-500 text-center">
-                Pretende restaurar "{bookToRestore.title}" para a sua biblioteca?
+                {t('trash.restoreConfirmSubtitle', { title: bookToRestore.title })}
               </p>
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
@@ -153,7 +157,7 @@ export function TrashView() {
               </button>
               <button 
                 onClick={() => { restoreBook(bookToRestore); setBookToRestore(null); }}
-                style={{ backgroundColor: 'var(--color-primary, #1a5eb8)' }}
+                style={{ backgroundColor: 'var(--color-primary, var(--color-primary))' }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
               >
                 {t('trash.restoreAction')}

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { LocalBook, AppSettings, DEFAULT_SETTINGS, BackupRecord } from './types';
 import { getAllBooks, saveBook, deleteBook as dbDeleteBook, getDeletedBooks, hardDeleteBook } from './lib/db';
 import { syncBooks } from './lib/syncService';
+import { exportToExcel, parseExcelBackup } from './lib/excelService';
 
 const DEFAULT_THEMES = [
   'Autoajuda', 'Ciência Política', 'Cooking (Natural foods)', 'Culinária', 
@@ -34,7 +35,8 @@ interface BookContextType {
   backupHistory: BackupRecord[];
   addBackupRecord: (type: 'Automático' | 'Manual') => void;
   exportBackup: () => void;
-  importBackup: (jsonString: string) => Promise<boolean>;
+  getBackupJSONString: () => string;
+  importBackup: (input: string | ArrayBuffer) => Promise<boolean>;
   trashedBooks: LocalBook[];
   hardRemoveBook: (id: string) => Promise<void>;
   restoreBook: (book: LocalBook) => Promise<void>;
@@ -132,7 +134,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('library_backup_history', JSON.stringify(updated));
   };
 
-  const exportBackup = () => {
+  const getBackupJSONString = () => {
     const backupData = {
       version: '1.0',
       exportDate: new Date().toISOString(),
@@ -140,20 +142,16 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
       themes,
       settings,
     };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `biblioteca_backup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    return JSON.stringify(backupData, null, 2);
+  };
 
+  const exportBackup = () => {
+    exportToExcel(books, themes, settings);
     addBackupRecord('Manual');
   };
 
-  const importBackup = async (jsonString: string): Promise<boolean> => {
+  const importBackupData = async (data: { books: LocalBook[]; themes?: string[]; settings?: any }): Promise<boolean> => {
     try {
-      const data = JSON.parse(jsonString);
       if (data && Array.isArray(data.books)) {
         for (const book of data.books) {
           await saveBook(book);
@@ -170,6 +168,24 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
+    } catch (e) {
+      console.error("Error importing backup data", e);
+      return false;
+    }
+  };
+
+  const importBackup = async (input: string | ArrayBuffer): Promise<boolean> => {
+    try {
+      if (typeof input !== 'string') {
+        const parsed = parseExcelBackup(input);
+        return await importBackupData(parsed);
+      }
+      try {
+        const data = JSON.parse(input);
+        return await importBackupData(data);
+      } catch {
+        return false;
+      }
     } catch (e) {
       console.error("Error importing backup", e);
       return false;
@@ -289,6 +305,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         backupHistory,
         addBackupRecord,
         exportBackup,
+        getBackupJSONString,
         importBackup,
         trashedBooks,
         hardRemoveBook,

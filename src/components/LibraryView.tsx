@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useBooks } from '../BookContext';
 import { Search, Book, Users, Pencil, Trash2, Filter } from 'lucide-react';
-import { LocalBook } from '../types';
+import { LocalBook, isDefaultNavLabel } from '../types';
 import { useTranslation } from '../i18n/LanguageContext';
 
 interface LibraryViewProps {
@@ -11,12 +11,17 @@ interface LibraryViewProps {
 }
 
 export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryViewProps) {
-  const { books, removeBook, hardRemoveBook, themes } = useBooks();
+  const { books, removeBook, hardRemoveBook, themes, settings } = useBooks();
   const { t, translateTheme } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory || 'Todos os temas');
   const [sortBy, setSortBy] = useState('Título');
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
+
+  const customNavLabel = settings?.navLabels?.library;
+  const pageTitle = customNavLabel && !isDefaultNavLabel('library', customNavLabel)
+    ? customNavLabel
+    : t('nav.library');
 
   React.useEffect(() => {
     if (initialCategory) {
@@ -50,12 +55,12 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">{t('nav.library')}</h2>
+              <h2 className="text-2xl font-bold text-slate-800">{pageTitle}</h2>
               <p className="text-slate-500 mt-1">{filteredBooks.length === 1 ? t('library.booksFound_one') : t('library.booksFound_other', { count: filteredBooks.length })}</p>
             </div>
             <button 
               onClick={onAddBook}
-              className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0 shadow-sm"
+              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0 shadow-sm"
             >
               {t('library.addBook')}
             </button>
@@ -70,15 +75,15 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
                 placeholder={t('library.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-transparent border-none text-slate-700 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 rounded-xl"
+                className="w-full bg-transparent border-none text-slate-700 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 rounded-xl"
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <select 
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#1a5eb8] shadow-sm appearance-none min-w-[200px]"
+                className="w-full sm:w-auto bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[var(--color-primary)] shadow-sm appearance-none sm:min-w-[200px]"
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>{cat === 'Todos os temas' ? t('library.allThemes') : translateTheme(cat)}</option>
@@ -88,7 +93,7 @@ export function LibraryView({ onAddBook, onEditBook, initialCategory }: LibraryV
               <select 
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[#1a5eb8] shadow-sm appearance-none min-w-[200px]"
+                className="w-full sm:w-auto bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 focus:outline-none focus:border-[var(--color-primary)] shadow-sm appearance-none sm:min-w-[200px]"
               >
                 <option value="Título">{t('library.title')}</option>
                 {/* Add more sort options if needed */}
@@ -167,7 +172,7 @@ const BookCard: React.FC<{ book: LocalBook, onEdit: () => void, onDelete: () => 
       <div className="absolute top-2 left-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button 
           onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          className="bg-white text-slate-600 hover:text-[#1a5eb8] p-1.5 rounded-full shadow-sm border border-slate-200"
+          className="bg-white text-slate-600 hover:text-[var(--color-primary)] p-1.5 rounded-full shadow-sm border border-slate-200"
           title={t('common.edit')}
         >
           <Pencil className="w-3.5 h-3.5" />

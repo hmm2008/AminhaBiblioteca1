@@ -334,7 +334,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
               key={mode}
               onClick={() => setSearchMode(mode as any)}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                searchMode === mode ? 'bg-[#1a5eb8] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                searchMode === mode ? 'bg-[var(--color-primary)] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {mode === 'title' ? t('library.title') : mode === 'author' ? t('common.author') : t('bookForm.publisher')}
@@ -346,13 +346,13 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             type="text" 
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
-            className="flex-1 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+            className="flex-1 bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             placeholder={`Ex: ${searchMode === 'title' ? 'O Nome da Rosa' : searchMode === 'author' ? 'Umberto Eco' : 'Gradiva'}`}
           />
           <button 
             onClick={() => executeSearch('online')}
             disabled={isSearching}
-            className="bg-[#8bb4eb]/30 text-[#1a5eb8] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
+            className="bg-[#8bb4eb]/30 text-[var(--color-primary)] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
           >
             {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             {t('common.search')}
@@ -370,14 +370,14 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 type="text" 
                 value={formData.isbn || ''}
                 onChange={e => setFormData({...formData, isbn: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+                className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 placeholder="Ex: 9789720049964"
               />
             </div>
             <button 
               onClick={() => executeSearch('isbn')}
               disabled={isSearching}
-              className="bg-[#8bb4eb]/30 text-[#1a5eb8] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
+              className="bg-[#8bb4eb]/30 text-[var(--color-primary)] hover:bg-[#8bb4eb]/50 px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               {t('common.search')}
@@ -390,7 +390,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           <div className="relative flex justify-center"><span className="bg-white px-4 text-xs text-slate-400 bg-white">ou</span></div>
         </div>
 
-        <button className="w-full py-4 rounded-xl border-2 border-dashed border-[#8bb4eb] text-[#1a5eb8] bg-[#8bb4eb]/10 hover:bg-[#8bb4eb]/20 text-sm font-medium flex items-center justify-center gap-2 transition-colors">
+        <button className="w-full py-4 rounded-xl border-2 border-dashed border-[#8bb4eb] text-[var(--color-primary)] bg-[#8bb4eb]/10 hover:bg-[#8bb4eb]/20 text-sm font-medium flex items-center justify-center gap-2 transition-colors">
           <ScanBarcode className="w-5 h-5" />
           {t('bookForm.scanBarcode')}
         </button>
@@ -415,48 +415,48 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
         <form id="book-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.bookTitle')} *</label>
-            <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('common.author')}</label>
-            <input type="text" value={formData.author || ''} onChange={e => setFormData({...formData, author: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input type="text" value={formData.author || ''} onChange={e => setFormData({...formData, author: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.publisher')}</label>
-            <input type="text" value={formData.publisher || ''} onChange={e => setFormData({...formData, publisher: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input type="text" value={formData.publisher || ''} onChange={e => setFormData({...formData, publisher: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.publishYear')}</label>
-            <input type="text" value={formData.publishedDate || ''} onChange={e => setFormData({...formData, publishedDate: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input type="text" value={formData.publishedDate || ''} onChange={e => setFormData({...formData, publishedDate: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.isbn')}</label>
-            <input type="text" value={formData.isbn || ''} onChange={e => setFormData({...formData, isbn: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input type="text" value={formData.isbn || ''} onChange={e => setFormData({...formData, isbn: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.pages')}</label>
-            <input type="text" value={formData.pageCount || ''} onChange={e => setFormData({...formData, pageCount: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input type="text" value={formData.pageCount || ''} onChange={e => setFormData({...formData, pageCount: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.languageLabel')}</label>
-            <select value={formData.language || ''} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+            <select value={formData.language || ''} onChange={e => setFormData({...formData, language: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20">
               <option value="">{t('bookForm.languagePlaceholder')}</option>
               <option value="pt">{t('bookForm.langPt')}</option>
               <option value="en">{t('bookForm.langEn')}</option>
-              <option value="es">Espanhol</option>
+              <option value="es">{t('bookForm.langEs')}</option>
               <option value="fr">{t('bookForm.langFr')}</option>
             </select>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.shelfLocation')}</label>
-            <input type="text" value={formData.shelfLocation || ''} onChange={e => setFormData({...formData, shelfLocation: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" />
+            <input type="text" value={formData.shelfLocation || ''} onChange={e => setFormData({...formData, shelfLocation: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" />
           </div>
 
           <div className="space-y-1.5">
@@ -470,23 +470,23 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   setFormData({...formData, category: e.target.value});
                 }
               }} 
-              className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+              className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
             >
               <option value="">{t('bookForm.selectTheme')}</option>
               {themes.map(theme => (
                 <option key={theme} value={theme}>{translateTheme(theme)}</option>
               ))}
-              <option value="nova" className="font-bold text-[#1a5eb8]">{t('bookForm.newCategory')}</option>
+              <option value="nova" className="font-bold text-[var(--color-primary)]">{t('bookForm.newCategory')}</option>
             </select>
           </div>
 
           <div className="space-y-1.5 pt-2">
             <div className="flex justify-between items-center mb-2">
               <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.bookCover')}</label>
-              <div className="flex gap-3 text-xs text-[#1a5eb8]">
-                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => fileInputRef.current?.click()}>{t('bookForm.pasteImage')}</button>
-                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={() => setShowUrlInput(!showUrlInput)}>{t('bookForm.manualUrl')}</button>
-                <button type="button" className="hover:underline hover:text-[#154a93] cursor-pointer" onClick={handleCoverSearch}>{t('bookForm.searchCovers')}</button>
+              <div className="flex gap-3 text-xs text-[var(--color-primary)]">
+                <button type="button" className="hover:underline hover:text-[var(--color-primary-hover)] cursor-pointer" onClick={() => fileInputRef.current?.click()}>{t('bookForm.pasteImage')}</button>
+                <button type="button" className="hover:underline hover:text-[var(--color-primary-hover)] cursor-pointer" onClick={() => setShowUrlInput(!showUrlInput)}>{t('bookForm.manualUrl')}</button>
+                <button type="button" className="hover:underline hover:text-[var(--color-primary-hover)] cursor-pointer" onClick={handleCoverSearch}>{t('bookForm.searchCovers')}</button>
               </div>
             </div>
 
@@ -497,7 +497,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   placeholder="https://exemplo.com/capa.jpg" 
                   value={coverUrlInput}
                   onChange={(e) => setCoverUrlInput(e.target.value)}
-                  className="flex-1 border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20" 
+                  className="flex-1 border border-slate-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20" 
                 />
                 <button 
                   type="button" 
@@ -508,7 +508,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                       setShowUrlInput(false);
                     }
                   }}
-                  className="bg-[#1a5eb8] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#154a93]"
+                  className="bg-[var(--color-primary)] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[var(--color-primary-hover)]"
                 >
                   Carregar
                 </button>
@@ -530,18 +530,18 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.notes')}</label>
-            <textarea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-32 focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 resize-none" />
+            <textarea value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-32 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none" />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.personalNotes')}</label>
-            <textarea value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20 resize-none" />
+            <textarea value={formData.notes || ''} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20 resize-none" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('common.status')}</label>
-              <select value={formData.status || 'Disponível'} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+              <select value={formData.status || 'Disponível'} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20">
                 <option value="Disponível">{t('common.bookStatus.available')}</option>
                 <option value="Emprestado">{t('common.bookStatus.borrowed')}</option>
                 <option value="Extraviado">{t('common.bookStatus.lost')}</option>
@@ -549,7 +549,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-slate-500 tracking-wider">{t('bookForm.readStatus')}</label>
-              <select value={formData.readStatus || 'Não Lido'} onChange={e => setFormData({...formData, readStatus: e.target.value as ReadStatus})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20">
+              <select value={formData.readStatus || 'Não Lido'} onChange={e => setFormData({...formData, readStatus: e.target.value as ReadStatus})} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20">
                 <option value="Não Lido">{t('common.readStatus.unread')}</option>
                 <option value="A ler">{t('common.readStatus.reading')}</option>
                 <option value="Lido">{t('common.readStatus.read')}</option>
@@ -580,7 +580,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
         <button onClick={onClose} className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors">
           {t('common.cancel')}
         </button>
-        <button type="submit" form="book-form" className="px-8 py-2.5 bg-[#1a5eb8] text-white font-semibold rounded-lg hover:bg-[#154a93] transition-colors shadow-sm">
+        <button type="submit" form="book-form" className="px-8 py-2.5 bg-[var(--color-primary)] text-white font-semibold rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors shadow-sm">
           {book ? t('bookForm.updateBook') : t('bookForm.saveBook')}
         </button>
       </div>
@@ -590,7 +590,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden">
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-800 mb-2">
-                Nova Categoria
+                {t('themes.newTheme')}
               </h3>
               <p className="text-sm text-slate-500 mb-4">
                 {t('bookForm.newCategoryPrompt')}
@@ -600,8 +600,8 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 autoFocus
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
-                placeholder="Nome da categoria..."
-                className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+                placeholder={t('themes.categoryPlaceholder')}
+                className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
@@ -612,7 +612,7 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                 }}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button 
                 onClick={() => {
@@ -624,9 +624,9 @@ export function BookForm({ book, onSave, onClose }: BookFormProps) {
                   }
                 }}
                 disabled={!newCategoryName.trim()}
-                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[#1a5eb8] text-white hover:bg-[#154a93] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Gravar
+                {t('common.save')}
               </button>
             </div>
           </div>

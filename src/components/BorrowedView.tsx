@@ -2,11 +2,17 @@ import React from 'react';
 import { useBooks } from '../BookContext';
 import { Book, Users, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from '../i18n/LanguageContext';
+import { isDefaultNavLabel } from '../types';
 
 export function BorrowedView() {
-  const { books } = useBooks();
+  const { books, settings } = useBooks();
   const { t } = useTranslation();
   
+  const customNavLabel = settings?.navLabels?.borrowed;
+  const pageTitle = customNavLabel && !isDefaultNavLabel('borrowed', customNavLabel)
+    ? customNavLabel
+    : t('nav.borrowed');
+
   const borrowedBooks = books.filter(b => b.status === 'Emprestado');
 
   return (
@@ -17,7 +23,7 @@ export function BorrowedView() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">{t('nav.borrowed')}</h2>
+              <h2 className="text-2xl font-bold text-slate-800">{pageTitle}</h2>
               <p className="text-slate-500 mt-1">{t('borrowed.subtitle').replace('{count}', borrowedBooks.length.toString())}</p>
             </div>
           </div>
@@ -25,8 +31,8 @@ export function BorrowedView() {
           {borrowedBooks.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-20 flex flex-col items-center justify-center text-center shadow-sm mt-8">
               <Book className="w-16 h-16 text-[#8bb4eb] mb-4 opacity-70" />
-              <h3 className="text-[#1a5eb8] font-semibold text-lg mb-1">{t('borrowed.emptyTitle')}</h3>
-              <p className="text-[#1a5eb8] text-sm opacity-80">{t('borrowed.emptySubtitle')}</p>
+              <h3 className="text-[var(--color-primary)] font-semibold text-lg mb-1">{t('borrowed.emptyTitle')}</h3>
+              <p className="text-[var(--color-primary)] text-sm opacity-80">{t('borrowed.emptySubtitle')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 pt-4">

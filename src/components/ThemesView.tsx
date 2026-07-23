@@ -2,17 +2,23 @@ import React, { useState } from 'react';
 import { Bookmark, Trash2 } from 'lucide-react';
 import { useBooks } from '../BookContext';
 import { useTranslation } from '../i18n/LanguageContext';
+import { isDefaultNavLabel } from '../types';
 
 interface ThemesViewProps {
   onNavigateToLibrary?: (theme: string) => void;
 }
 
 export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
-  const { themes, books, addTheme, removeTheme } = useBooks();
+  const { themes, books, addTheme, removeTheme, settings } = useBooks();
   const { t, translateTheme } = useTranslation();
   const [isAddingTheme, setIsAddingTheme] = useState(false);
   const [newThemeName, setNewThemeName] = useState('');
   const [themeToDelete, setThemeToDelete] = useState<string | null>(null);
+
+  const customNavLabel = settings?.navLabels?.themes;
+  const pageTitle = customNavLabel && !isDefaultNavLabel('themes', customNavLabel)
+    ? customNavLabel
+    : t('nav.themes');
 
   const handleAddThemeSubmit = () => {
     if (newThemeName.trim()) {
@@ -30,12 +36,12 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">{t('nav.themes')}</h2>
+              <h2 className="text-2xl font-bold text-slate-800">{pageTitle}</h2>
               <p className="text-slate-500 mt-1">{t('themes.subtitle')}</p>
             </div>
             <button 
               onClick={() => setIsAddingTheme(true)}
-              className="bg-[#1a5eb8] hover:bg-[#154a93] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0 shadow-sm"
+              className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shrink-0 shadow-sm"
             >
               {t('themes.newTheme')}
             </button>
@@ -50,13 +56,13 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
                 <div key={theme} className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="bg-blue-50 text-[#1a5eb8] p-2 rounded-lg">
+                      <div className="bg-blue-50 text-[var(--color-primary)] p-2 rounded-lg">
                         <Bookmark className="w-4 h-4" />
                       </div>
                       <span className="font-semibold text-slate-700 text-sm">{translateTheme(theme)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="bg-slate-100 text-[#1a5eb8] text-xs font-bold px-2 py-0.5 rounded-full">
+                      <span className="bg-slate-100 text-[var(--color-primary)] text-xs font-bold px-2 py-0.5 rounded-full">
                         {bookCount}
                       </span>
                       <button 
@@ -73,7 +79,7 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
                     <div className="pt-2 border-t border-slate-100">
                       <button 
                         onClick={() => onNavigateToLibrary && onNavigateToLibrary(theme)}
-                        className="text-[#1a5eb8] text-xs font-medium hover:underline flex items-center gap-1"
+                        className="text-[var(--color-primary)] text-xs font-medium hover:underline flex items-center gap-1"
                       >
                         <Bookmark className="w-3 h-3" /> {bookCount === 1 ? t('themes.bookCount_one') : t('themes.bookCount_other', { count: bookCount })}
                       </button>
@@ -113,8 +119,8 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
                 onKeyDown={e => {
                   if (e.key === 'Enter') handleAddThemeSubmit();
                 }}
-                placeholder="Nome da categoria..."
-                className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a5eb8]/20"
+                placeholder={t('themes.categoryPlaceholder')}
+                className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
             </div>
             <div className="p-4 border-t border-slate-100 flex gap-3 bg-slate-50">
@@ -130,7 +136,7 @@ export function ThemesView({ onNavigateToLibrary }: ThemesViewProps) {
               <button 
                 onClick={handleAddThemeSubmit}
                 disabled={!newThemeName.trim()}
-                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[#1a5eb8] text-white hover:bg-[#154a93] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('common.save')}
               </button>

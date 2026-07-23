@@ -55,19 +55,35 @@ export interface BackupRecord {
   bookCount: number;
 }
 
+export const isDefaultNavLabel = (id: string, label?: string): boolean => {
+  if (!label) return true;
+  const trimmed = label.trim().toLowerCase();
+  const defaults: Record<string, string[]> = {
+    dashboard: ['início', 'inicio', 'home', 'accueil', 'dashboard', 'tableau de bord'],
+    add: ['adicionar livro', 'cria novo registo', 'add book', 'create new record', 'ajouter un livre', 'créer un nouvel enregistrement'],
+    library: ['a minha biblioteca', 'biblioteca', 'my library', 'library', 'ma bibliothèque', 'bibliothèque'],
+    themes: ['temas', 'themes', 'thèmes'],
+    borrowed: ['emprestados', 'borrowed books', 'livres empruntés', 'borrowed', 'empruntés'],
+    reports: ['relatórios', 'relatorios', 'reports', 'rapports'],
+    trash: ['reciclagem', 'lixeira', 'trash', 'corbeille'],
+    settings: ['configurações/backup', 'configuracoes/backup', 'configurações', 'configuracoes', 'settings', 'paramètres', 'parametres'],
+  };
+  return defaults[id]?.includes(trimmed) ?? false;
+};
+
 export const DEFAULT_SETTINGS: AppSettings = {
   libraryName: 'Biblioteca Pessoal de Manuel Francisco',
-  subTitle: 'A tua biblioteca pessoal em casa.',
-  welcomeMessage: 'Bem-vindo à Biblioteca Pessoal de Manuel Francisco 👋',
+  welcomeMessage: 'Bem-vindo à Biblioteca Pessoal de Manuel Francisco',
+  subTitle: 'A tua Biblioteca Pessoal na nuvem',
   navLabels: {
-    dashboard: 'Início',
-    library: 'Biblioteca',
-    add: 'Adicionar Livro',
-    themes: 'Temas',
-    borrowed: 'Emprestados',
-    reports: 'Relatórios',
-    settings: 'Configurações',
-    trash: 'Lixeira',
+    dashboard: '',
+    library: '',
+    add: '',
+    themes: '',
+    borrowed: '',
+    reports: '',
+    settings: '',
+    trash: '',
   },
   colorTheme: 'blue',
   fontFamily: 'inter',
